@@ -1,0 +1,42 @@
+<div class="min-h-screen bg-gray-100">
+
+  <header class="flex items-center justify-between bg-white px-6 py-4 shadow-sm">
+    <h1 class="text-xl font-bold">
+      Hospital Archive
+    </h1>
+
+    <button
+      class="rounded-lg border px-4 py-2"
+      (click)="logout()"
+    >
+      Logout
+    </button>
+  </header>
+
+  <main class="p-6">
+
+    <h2 class="mb-6 text-2xl font-bold">
+      Dashboard
+    </h2>
+
+    <div class="grid gap-6 md:grid-cols-3">
+
+      <div class="rounded-xl bg-white p-6 shadow">
+        <p class="text-gray-500">Documents</p>
+        <p class="mt-2 text-3xl font-bold">0</p>
+      </div>
+
+      <div class="rounded-xl bg-white p-6 shadow">
+        <p class="text-gray-500">Patients</p>
+        <p class="mt-2 text-3xl font-bold">0</p>
+      </div>
+
+      <div class="rounded-xl bg-white p-6 shadow">
+        <p class="text-gray-500">Services</p>
+        <p class="mt-2 text-3xl font-bold">0</p>
+      </div>
+
+    </div>
+
+  </main>
+</div>
