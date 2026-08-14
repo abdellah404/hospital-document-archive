@@ -1,4 +1,15 @@
 from app.models.role import Role
 from app.models.user import User
+from app.models.patient import Patient
+from app.models.service import Service
+from app.models.hospitalization import Hospitalization
+from app.models.document import Document
 
-__all__ = ["Role", "User"]
+__all__ = [
+    "Role",
+    "User",
+    "Patient",
+    "Service",
+    "Hospitalization",
+    "Document"
+]
