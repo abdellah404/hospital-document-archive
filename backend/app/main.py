@@ -7,6 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.patients import router as patients_router
 from app.api.services import router as services_router
 from app.api.hospitalizations import router as hospitalizations_router
+from app.api.documents import router as documents_router
 
 
 app = FastAPI(
@@ -26,6 +27,7 @@ app.include_router(auth_router)
 app.include_router(patients_router)
 app.include_router(services_router)
 app.include_router(hospitalizations_router)
+app.include_router(documents_router)
 
 
 @app.get("/health")

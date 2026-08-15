@@ -10,6 +10,17 @@ export const routes: Routes = [
   },
 
   {
+    path: 'documents/import',
+    canActivate: [authGuard],
+    loadComponent: () =>
+    import(
+      './features/documents/document-import/document-import'
+    ).then(
+      m => m.DocumentImportComponent
+    ),
+  }
+  ,
+  {
     path: 'dashboard',
      canActivate: [authGuard],
     loadComponent: () =>
@@ -18,13 +29,9 @@ export const routes: Routes = [
   },
 
   {
-    path: '',
-    redirectTo: 'dashboard',
-    pathMatch: 'full',
-  },
-
-  {
     path: '**',
     redirectTo: 'dashboard',
   },
+
+  
 ];

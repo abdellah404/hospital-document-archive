@@ -28,8 +28,7 @@ frontend/dist/
 Thumbs.db
 
 # Application storage
-storage/documents/*
-storage/temp/*
+backend/storage/documents/
 
 # Logs
 *.log

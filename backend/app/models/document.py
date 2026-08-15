@@ -28,6 +28,7 @@ class Document(Base):
     stored_filename: Mapped[str] = mapped_column(
         String(255),
         nullable=False,
+        unique=True,
     )
 
     storage_path: Mapped[str] = mapped_column(
