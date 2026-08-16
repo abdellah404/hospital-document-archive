@@ -17,7 +17,8 @@ class Document(Base):
 
     hospitalization_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("hospitalizations.id"),
-        nullable=False,
+        nullable=True,
+        unique=True,
     )
 
     original_filename: Mapped[str] = mapped_column(

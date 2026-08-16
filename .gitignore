@@ -39,3 +39,5 @@ backend/storage/documents/
 
 # Database
 *.sql
+
+graphify-out/

@@ -5,6 +5,7 @@ from app.models.service import Service
 from app.models.hospitalization import Hospitalization
 from app.models.document import Document
 from app.models.document_extraction import DocumentExtraction
+from app.models.document_ai_result import DocumentAIResult
 
 __all__ = [
     "Role",
@@ -13,5 +14,6 @@ __all__ = [
     "Service",
     "Hospitalization",
     "Document",
-    "DocumentExtraction"
+    "DocumentExtraction",
+    "DocumentAIResult",
 ]
