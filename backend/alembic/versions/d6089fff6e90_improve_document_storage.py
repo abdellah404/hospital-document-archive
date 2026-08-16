@@ -3,8 +3,8 @@
 Revision ID: d6089fff6e90
 Revises: e15595ed6246
 Create Date: 2026-08-15 00:50:45.903119
-
 """
+
 from typing import Sequence, Union
 
 from alembic import op

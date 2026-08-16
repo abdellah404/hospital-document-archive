@@ -4,6 +4,7 @@ from app.models.patient import Patient
 from app.models.service import Service
 from app.models.hospitalization import Hospitalization
 from app.models.document import Document
+from app.models.document_extraction import DocumentExtraction
 
 __all__ = [
     "Role",
@@ -11,5 +12,6 @@ __all__ = [
     "Patient",
     "Service",
     "Hospitalization",
-    "Document"
+    "Document",
+    "DocumentExtraction"
 ]

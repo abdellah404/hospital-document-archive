@@ -21,6 +21,14 @@ from app.models.user import User
 from app.schemas.document import DocumentResponse
 from app.schemas import document
 
+from app.models.document_extraction import (
+    DocumentExtraction,
+)
+
+from app.services.ocr_service import (
+    extract_text_from_pdf,
+)
+
 
 router = APIRouter(
     prefix="/documents",
@@ -44,7 +52,7 @@ async def upload_document(
     hospitalization_id: uuid.UUID,
     file: UploadFile = File(...),
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    #current_user: User = Depends(get_current_user),
 ):
 
     hospitalization = db.get(
@@ -144,3 +152,79 @@ def get_document_file(
         media_type="application/pdf",
         filename=document.original_filename,
     )
+
+
+
+
+@router.post(
+    "/{document_id}/ocr",
+)
+def process_document_ocr(
+    document_id: uuid.UUID,
+    db: Session = Depends(get_db),
+    #current_user: User = Depends(get_current_user),
+):
+    document = db.get(
+        Document,
+        document_id,
+    )
+
+    if not document:
+        raise HTTPException(
+            status_code=404,
+            detail="Document not found",
+        )
+
+    file_path = Path(document.storage_path)
+
+    if not file_path.exists():
+        raise HTTPException(
+            status_code=404,
+            detail="Document file not found",
+        )
+
+    document.status = "OCR_PROCESSING"
+
+    db.commit()
+
+    try:
+        text = extract_text_from_pdf(
+            str(file_path)
+        )
+
+        extraction = db.scalar(
+            select(DocumentExtraction).where(
+                DocumentExtraction.document_id
+                == document.id
+            )
+        )
+
+        if extraction:
+            extraction.ocr_text = text
+        else:
+            extraction = DocumentExtraction(
+                document_id=document.id,
+                ocr_text=text,
+            )
+
+            db.add(extraction)
+
+        document.status = "AI_PROCESSING"
+
+        db.commit()
+
+        return {
+            "document_id": str(document.id),
+            "status": document.status,
+            "message": "OCR completed successfully",
+        }
+
+    except Exception:
+        document.status = "OCR_ERROR"
+
+        db.commit()
+
+        raise HTTPException(
+            status_code=500,
+            detail="OCR processing failed",
+        )
