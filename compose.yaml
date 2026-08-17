@@ -1,25 +1,66 @@
 services:
+
   postgres:
+
     image: postgres:17
+
     container_name: hospital-archive-postgres
+
     restart: unless-stopped
 
     environment:
+
       POSTGRES_DB: ${POSTGRES_DB}
+
       POSTGRES_USER: ${POSTGRES_USER}
+
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
 
     ports:
+
       - "5432:5432"
 
     volumes:
+
       - archive_postgres_data:/var/lib/postgresql/data
 
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U hospital_archive -d hospital_archive"]
+
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U hospital_archive -d hospital_archive"
+        ]
+
       interval: 5s
+
       timeout: 5s
+
       retries: 5
 
+
+  redis:
+
+    image: redis:7-alpine
+
+    container_name: hospital-archive-redis
+
+    restart: unless-stopped
+
+    ports:
+
+      - "6379:6379"
+
+    volumes:
+
+      - archive_redis_data:/data
+
+    command:
+      redis-server --appendonly yes
+
+
 volumes:
+
   archive_postgres_data:
+
+  archive_redis_data:

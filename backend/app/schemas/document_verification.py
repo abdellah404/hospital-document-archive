@@ -1,3 +1,5 @@
+from datetime import date
+
 from pydantic import BaseModel, Field
 
 
@@ -11,3 +13,7 @@ class DocumentVerificationRequest(BaseModel):
     )
 
     service_id: str
+
+    admission_date: date
+
+    discharge_date: date | None = None

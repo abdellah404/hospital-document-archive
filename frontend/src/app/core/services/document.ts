@@ -1,28 +1,157 @@
-import { Injectable, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import {
+  Injectable,
+  inject,
+} from '@angular/core';
+
+import {
+  HttpClient,
+} from '@angular/common/http';
+
+import {
+  Observable,
+} from 'rxjs';
+
+import {
+  environment,
+} from '../../../environments/environment';
+
 
 export interface DocumentResponse {
   id: string;
-  hospitalization_id: string;
+  hospitalization_id: string | null;
   original_filename: string;
   status: string;
   created_at: string;
 }
 
+
+export interface DocumentStatusResponse {
+  document_id: string;
+  status: string;
+}
+
+
+export interface AIResult {
+
+  cni: string | null;
+
+  first_name: string | null;
+
+  last_name: string | null;
+
+  hospitalization_number:
+    string | null;
+
+  service_name:
+    string | null;
+
+  admission_date:
+    string | null;
+
+  discharge_date:
+    string | null;
+}
+
+
+export interface IdentificationResult {
+
+  patient: {
+    status: string;
+    id: string | null;
+  };
+
+  hospitalization: {
+    status: string;
+    id: string | null;
+  };
+
+  service: {
+    status: string;
+    id: string | null;
+  };
+}
+
+
+export interface DocumentReview {
+
+  document: {
+    id: string;
+    filename: string;
+    status: string;
+  };
+
+  ai: AIResult;
+
+  identification:
+    IdentificationResult;
+}
+
+
+export interface ServiceResponse {
+
+  id: string;
+
+  name: string;
+
+  is_active: boolean;
+}
+
+
+export interface VerifyDocumentRequest {
+
+  cni: string;
+
+  first_name: string;
+
+  last_name: string;
+
+  hospitalization_number:
+    string;
+
+  service_id: string;
+
+  admission_date: string;
+
+  discharge_date:
+    string | null;
+}
+
+
+export interface ArchiveResponse {
+
+  message: string;
+
+  document_id: string;
+
+  patient_id: string;
+
+  hospitalization_id: string;
+
+  service_id: string;
+
+  status: string;
+}
+
+
 @Injectable({
   providedIn: 'root',
 })
 export class DocumentService {
-  private http = inject(HttpClient);
 
-  private apiUrl = 'http://localhost:8000';
+  private http = inject(
+    HttpClient
+  );
+
+  private apiUrl =
+    environment.apiUrl;
+
 
   upload(
-    hospitalizationId: string,
     file: File,
   ): Observable<DocumentResponse> {
-    const formData = new FormData();
+
+    const formData =
+      new FormData();
 
     formData.append(
       'file',
@@ -31,14 +160,62 @@ export class DocumentService {
     );
 
     return this.http.post<DocumentResponse>(
-      `${this.apiUrl}/documents/upload?hospitalization_id=${hospitalizationId}`,
+      `${this.apiUrl}/documents/upload`,
       formData,
     );
   }
 
-  getDocuments(): Observable<DocumentResponse[]> {
-    return this.http.get<DocumentResponse[]>(
-      `${this.apiUrl}/documents`,
+
+  getStatus(
+    documentId: string,
+  ): Observable<DocumentStatusResponse> {
+
+    return this.http.get<DocumentStatusResponse>(
+      `${this.apiUrl}/documents/${documentId}/status`,
+    );
+  }
+
+
+  getFile(
+    documentId: string,
+  ): Observable<Blob> {
+
+    return this.http.get(
+      `${this.apiUrl}/documents/${documentId}/file`,
+      {
+        responseType: 'blob',
+      },
+    );
+  }
+
+
+  getReview(
+    documentId: string,
+  ): Observable<DocumentReview> {
+
+    return this.http.get<DocumentReview>(
+      `${this.apiUrl}/documents/${documentId}/review`,
+    );
+  }
+
+
+  getServices():
+    Observable<ServiceResponse[]> {
+
+    return this.http.get<ServiceResponse[]>(
+      `${this.apiUrl}/services`,
+    );
+  }
+
+
+  verify(
+    documentId: string,
+    data: VerifyDocumentRequest,
+  ): Observable<ArchiveResponse> {
+
+    return this.http.post<ArchiveResponse>(
+      `${this.apiUrl}/documents/${documentId}/verify`,
+      data,
     );
   }
 }

@@ -15,7 +15,7 @@ class Document(Base):
         default=uuid.uuid4,
     )
 
-    hospitalization_id: Mapped[uuid.UUID] = mapped_column(
+    hospitalization_id: Mapped[uuid.UUID | None ] = mapped_column(
         ForeignKey("hospitalizations.id"),
         nullable=True,
         unique=True,

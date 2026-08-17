@@ -1,68 +1,724 @@
-<div class="min-h-screen bg-gray-100 p-6">
+<div class="archivist-page">
 
-  <div class="mx-auto max-w-2xl rounded-xl bg-white p-6 shadow">
+  <header class="page-header">
 
-    <h1 class="mb-6 text-2xl font-bold">
-      Import Document
-    </h1>
+    <div>
 
-    <div class="space-y-5">
+      <p class="eyebrow">
+        ARCHIVIST WORKFLOW
+      </p>
 
-      <div>
-        <label class="mb-2 block text-sm font-medium">
-          Hospitalization ID
-        </label>
+      <h1>
+        Hospital Archive
+      </h1>
 
-        <input
-          type="text"
-          [(ngModel)]="hospitalizationId"
-          class="w-full rounded-lg border px-3 py-2"
-          placeholder="Hospitalization UUID"
-        />
-      </div>
-
-      <div>
-        <label class="mb-2 block text-sm font-medium">
-          PDF Document
-        </label>
-
-        <input
-          type="file"
-          accept="application/pdf"
-          (change)="onFileSelected($event)"
-          class="block w-full rounded-lg border p-2"
-        />
-      </div>
-
-      @if (selectedFile) {
-        <p class="text-sm text-gray-600">
-          Selected:
-          {{ selectedFile.name }}
-        </p>
-      }
-
-      @if (message) {
-        <p class="text-sm text-green-600">
-          {{ message }}
-        </p>
-      }
-
-      @if (errorMessage) {
-        <p class="text-sm text-red-600">
-          {{ errorMessage }}
-        </p>
-      }
-
-      <button
-        type="button"
-        (click)="upload()"
-        class="w-full rounded-lg bg-blue-600 px-4 py-2 font-medium text-white"
-      >
-        Import Document
-      </button>
+      <p class="subtitle">
+        Import, extract, review, verify, and archive patient documents.
+      </p>
 
     </div>
 
-  </div>
+  </header>
+
+
+  <main class="workflow-container">
+
+
+    <!-- ================================================= -->
+    <!-- PROGRESS -->
+    <!-- ================================================= -->
+
+    <section class="workflow-progress">
+
+      @for (
+        step of steps;
+        track step.key;
+        let index = $index
+      ) {
+
+        <div
+          class="workflow-step"
+          [class.active]="currentStep === step.key"
+          [class.completed]="isStepCompleted(step.key)"
+        >
+
+          <div class="step-number">
+
+            @if (
+              isStepCompleted(step.key)
+            ) {
+              ✓
+            }
+
+            @else {
+              {{ index + 1 }}
+            }
+
+          </div>
+
+          <span>
+            {{ step.label }}
+          </span>
+
+        </div>
+
+
+        @if (
+          index < steps.length - 1
+        ) {
+
+          <div class="step-line"></div>
+
+        }
+
+      }
+
+    </section>
+
+
+    <!-- ================================================= -->
+    <!-- MESSAGES -->
+    <!-- ================================================= -->
+
+    @if (message) {
+
+      <div class="success-message">
+        {{ message }}
+      </div>
+
+    }
+
+
+    @if (errorMessage) {
+
+      <div class="error-message">
+        {{ errorMessage }}
+      </div>
+
+    }
+
+
+    @if (processingMessage) {
+
+      <div class="processing-message">
+
+        <span class="spinner"></span>
+
+        {{ processingMessage }}
+
+      </div>
+
+    }
+
+
+    @if (isProcessing) {
+
+      <div class="background-progress">
+
+        <div class="background-progress-header">
+          <span>Background processing</span>
+          <strong>{{ processingPercent }}%</strong>
+        </div>
+
+        <div class="progress-track" role="progressbar"
+          [attr.aria-valuenow]="processingPercent"
+          aria-valuemin="0" aria-valuemax="100">
+          <div class="progress-fill"
+            [style.width.%]="processingPercent"></div>
+        </div>
+
+        <small>OCR → Gemini AI → ready for archivist review</small>
+
+      </div>
+
+    }
+
+
+    <!-- ================================================= -->
+    <!-- IMPORT -->
+    <!-- ================================================= -->
+
+    @if (
+      currentStep === 'import'
+    ) {
+
+      <section class="workflow-card">
+
+        <div class="card-icon">
+          01
+        </div>
+
+        <h2>
+          Import PDF document
+        </h2>
+
+        <p class="card-description">
+          Select the medical document that must be archived.
+        </p>
+
+
+        <label
+          class="field-label"
+          for="pdfFile"
+        >
+          PDF document
+        </label>
+
+
+        <input
+          id="pdfFile"
+          type="file"
+          accept="application/pdf"
+          (change)="onFileSelected($event)"
+        />
+
+
+        @if (selectedFile) {
+
+          <div class="selected-file">
+
+            <span class="file-icon">
+              PDF
+            </span>
+
+            <div>
+
+              <strong>
+                {{ selectedFile.name }}
+              </strong>
+
+              <small>
+                {{
+                  (
+                    selectedFile.size
+                    / 1024
+                    / 1024
+                  ).toFixed(2)
+                }}
+                MB
+              </small>
+
+            </div>
+
+          </div>
+
+        }
+
+
+        <button
+          class="primary-button"
+          type="button"
+          [disabled]="
+            !selectedFile ||
+            isProcessing
+          "
+          (click)="importPdf()"
+        >
+
+          {{
+            isProcessing
+              ? 'Importing...'
+              : 'Import PDF'
+          }}
+
+        </button>
+
+      </section>
+
+    }
+
+
+    <!-- ================================================= -->
+    <!-- OCR -->
+    <!-- ================================================= -->
+
+    @if (
+      currentStep === 'ocr'
+    ) {
+
+      <section
+        class="workflow-card centered-card"
+      >
+
+        <div class="card-icon">
+          02
+        </div>
+
+        <h2>
+          OCR processing
+        </h2>
+
+        <p class="card-description">
+          The background worker is processing the scanned PDF.
+        </p>
+
+        <div class="process-box">
+
+          <span class="process-symbol">
+            ⌕
+          </span>
+
+          <strong>
+            Optical Character Recognition
+          </strong>
+
+          <span>
+            {{ processingMessage }}
+          </span>
+
+        </div>
+
+      </section>
+
+    }
+
+
+    <!-- ================================================= -->
+    <!-- AI -->
+    <!-- ================================================= -->
+
+    @if (
+      currentStep === 'ai'
+    ) {
+
+      <section
+        class="workflow-card centered-card"
+      >
+
+        <div class="card-icon gemini-icon">
+          03
+        </div>
+
+        <h2>
+          Gemini AI extraction
+        </h2>
+
+        <p class="card-description">
+          Gemini is analyzing the OCR text and extracting the information.
+        </p>
+
+        <div class="extraction-list">
+
+          <div>
+            Patient information
+          </div>
+
+          <div>
+            Hospitalization number
+          </div>
+
+          <div>
+            Hospital service
+          </div>
+
+          <div>
+            Admission date
+          </div>
+
+          <div>
+            Discharge date
+          </div>
+
+        </div>
+
+      </section>
+
+    }
+
+
+    <!-- ================================================= -->
+    <!-- REVIEW / VERIFY -->
+    <!-- ================================================= -->
+
+    @if (
+      currentStep === 'review'
+      ||
+      currentStep === 'verify'
+    ) {
+
+      <section
+        class="workflow-card review-card"
+      >
+
+        <div class="card-icon">
+          04
+        </div>
+
+        <h2>
+          Archivist review
+        </h2>
+
+        <p class="card-description">
+          Review and verify every extracted value against the original PDF.
+        </p>
+
+
+        <!-- PDF -->
+
+        @if (pdfViewerUrl) {
+
+          <div class="pdf-preview">
+
+            <iframe
+              [src]="pdfViewerUrl"
+              title="Document preview"
+            ></iframe>
+
+          </div>
+
+        }
+
+
+        <!-- FORM -->
+
+        <div class="form-grid">
+
+
+          <div class="form-field">
+
+            <label for="cni">
+              CNI *
+            </label>
+
+            <input
+              id="cni"
+              type="text"
+              [(ngModel)]="
+                extractedInformation.cni
+              "
+            />
+
+          </div>
+
+
+          <div class="form-field">
+
+            <label for="firstName">
+              Prénom *
+            </label>
+
+            <input
+              id="firstName"
+              type="text"
+              [(ngModel)]="
+                extractedInformation.firstName
+              "
+            />
+
+          </div>
+
+
+          <div class="form-field">
+
+            <label for="lastName">
+              Nom *
+            </label>
+
+            <input
+              id="lastName"
+              type="text"
+              [(ngModel)]="
+                extractedInformation.lastName
+              "
+            />
+
+          </div>
+
+
+          <div class="form-field">
+
+            <label for="hospitalizationNumber">
+              Numéro d'hospitalisation *
+            </label>
+
+            <input
+              id="hospitalizationNumber"
+              type="text"
+              [(ngModel)]="
+                extractedInformation.hospitalizationNumber
+              "
+            />
+
+          </div>
+
+
+          <div class="form-field">
+
+            <label for="service">
+              Service *
+            </label>
+
+            <select
+              id="service"
+              [(ngModel)]="
+                extractedInformation.serviceId
+              "
+            >
+
+              <option
+                value=""
+                disabled
+              >
+                Select a service
+              </option>
+
+
+              @for (
+                service of services;
+                track service.id
+              ) {
+
+                <option
+                  [value]="service.id"
+                >
+                  {{ service.name }}
+                </option>
+
+              }
+
+            </select>
+
+          </div>
+
+
+          <div class="form-field">
+
+            <label for="admissionDate">
+              Date d'admission *
+            </label>
+
+            <input
+              id="admissionDate"
+              type="date"
+              [(ngModel)]="
+                extractedInformation.admissionDate
+              "
+            />
+
+          </div>
+
+
+          <div class="form-field">
+
+            <label for="dischargeDate">
+              Date de sortie
+            </label>
+
+            <input
+              id="dischargeDate"
+              type="date"
+              [(ngModel)]="
+                extractedInformation.dischargeDate
+              "
+            />
+
+          </div>
+
+        </div>
+
+
+        <!-- REVIEW -->
+
+        @if (
+          currentStep === 'review'
+        ) {
+
+          <div class="action-row">
+
+            <button
+              class="primary-button"
+              type="button"
+              (click)="openVerification()"
+            >
+              Information is correct
+            </button>
+
+          </div>
+
+        }
+
+
+        <!-- VERIFY -->
+
+        @if (
+          currentStep === 'verify'
+        ) {
+
+          <div class="verification-box">
+
+            <strong>
+              Vérification finale obligatoire
+            </strong>
+
+            <p>
+              Vérifiez les informations avec le document original.
+              L'IA fournit uniquement des suggestions.
+              La date d'admission, la date de sortie,
+              le numéro d'hospitalisation, le patient
+              et le service doivent être vérifiés avant archivage.
+            </p>
+
+          </div>
+
+
+          <div class="action-row">
+
+            <button
+              class="secondary-button"
+              type="button"
+              (click)="correctInformation()"
+            >
+              Correct information
+            </button>
+
+
+            <button
+              class="primary-button"
+              type="button"
+              [disabled]="isProcessing"
+              (click)="verifyAndArchive()"
+            >
+
+              {{
+                isProcessing
+                  ? 'Archiving...'
+                  : 'Verify & Archive'
+              }}
+
+            </button>
+
+          </div>
+
+        }
+
+      </section>
+
+    }
+
+
+    <!-- ================================================= -->
+    <!-- ARCHIVED -->
+    <!-- ================================================= -->
+
+    @if (
+      currentStep === 'archived'
+    ) {
+
+      <section
+        class="workflow-card centered-card archived-card"
+      >
+
+        <div class="archive-check">
+          ✓
+        </div>
+
+        <h2>
+          Document archived
+        </h2>
+
+        <p class="card-description">
+          The archivist verified the information and completed the archive workflow.
+        </p>
+
+
+        <div class="archive-summary">
+
+          <div>
+
+            <span>
+              Patient
+            </span>
+
+            <strong>
+              {{ extractedInformation.firstName }}
+              {{ extractedInformation.lastName }}
+            </strong>
+
+          </div>
+
+
+          <div>
+
+            <span>
+              CNI
+            </span>
+
+            <strong>
+              {{ extractedInformation.cni }}
+            </strong>
+
+          </div>
+
+
+          <div>
+
+            <span>
+              Hospitalization
+            </span>
+
+            <strong>
+              {{ extractedInformation.hospitalizationNumber }}
+            </strong>
+
+          </div>
+
+
+          <div>
+
+            <span>
+              Service
+            </span>
+
+            <strong>
+              {{ extractedInformation.serviceName }}
+            </strong>
+
+          </div>
+
+
+          <div>
+
+            <span>
+              Date d'admission
+            </span>
+
+            <strong>
+              {{ extractedInformation.admissionDate }}
+            </strong>
+
+          </div>
+
+
+          <div>
+
+            <span>
+              Date de sortie
+            </span>
+
+            <strong>
+              {{
+                extractedInformation.dischargeDate
+                || 'Non renseignée'
+              }}
+            </strong>
+
+          </div>
+
+        </div>
+
+
+        <button
+          class="primary-button"
+          type="button"
+          (click)="resetWorkflow()"
+        >
+          Import another document
+        </button>
+
+      </section>
+
+    }
+
+  </main>
 
 </div>

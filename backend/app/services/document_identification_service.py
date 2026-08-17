@@ -1,9 +1,11 @@
-from app.services.patient_matching_service import (
-    identify_patient,
-)
+from sqlalchemy.orm import Session
 
 from app.services.hospitalization_matching_service import (
     identify_hospitalization,
+)
+
+from app.services.patient_matching_service import (
+    identify_patient,
 )
 
 from app.services.service_matching_service import (
@@ -20,6 +22,7 @@ def identify_document(
     hospitalization_number: str | None,
     service_name: str | None,
 ):
+
     patient_result = identify_patient(
         db=db,
         cni=cni,
@@ -27,9 +30,13 @@ def identify_document(
         last_name=last_name,
     )
 
-    hospitalization_result = identify_hospitalization(
-        db=db,
-        hospitalization_number=hospitalization_number,
+    hospitalization_result = (
+        identify_hospitalization(
+            db=db,
+            hospitalization_number=(
+                hospitalization_number
+            ),
+        )
     )
 
     service_result = identify_service(
