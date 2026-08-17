@@ -48,3 +48,8 @@ class Document(Base):
         default=datetime.utcnow,
         nullable=False,
     )
+
+    archived_at: Mapped[datetime | None] = mapped_column(
+    DateTime,
+    nullable=True,
+)

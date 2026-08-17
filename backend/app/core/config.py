@@ -25,6 +25,10 @@ class Settings(BaseSettings):
 
     redis_url: str = "redis://localhost:6379/0"
 
+    seed_admin_username: str = "admin"
+    seed_admin_email: str = "admin@gmail.com"
+    seed_admin_password: str = "admin"
+
     model_config = SettingsConfigDict(
         env_file=BASE_DIR / ".env",
         env_file_encoding="utf-8",

@@ -8,8 +8,7 @@ from app.api.patients import router as patients_router
 from app.api.services import router as services_router
 from app.api.hospitalizations import router as hospitalizations_router
 from app.api.documents import router as documents_router
-
-
+from app.api.audit_logs import router as audit_logs_router
 app = FastAPI(
     title="Hospital Archive API",
     version="0.1.0",
@@ -28,6 +27,7 @@ app.include_router(patients_router)
 app.include_router(services_router)
 app.include_router(hospitalizations_router)
 app.include_router(documents_router)
+app.include_router(audit_logs_router)
 
 
 @app.get("/health")

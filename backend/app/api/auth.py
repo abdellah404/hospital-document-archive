@@ -2,7 +2,8 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.api.dependencies import get_current_user
+from app.api.dependencies import get_current_user , get_current_admin
+
 from app.core.security import (
     create_access_token,
     hash_password,
@@ -18,11 +19,14 @@ from app.schemas.auth import (
     UserResponse,
 )
 
+from app.services.audit_service import create_audit_log
+
 router = APIRouter(
     prefix="/auth",
     tags=["Authentication"],
 )
 
+import uuid
 
 @router.post(
     "/register",
@@ -32,6 +36,7 @@ router = APIRouter(
 def register(
     data: RegisterRequest,
     db: Session = Depends(get_db),
+    current_admin: User = Depends(get_current_admin),
 ):
     existing_username = db.scalar(
         select(User).where(User.username == data.username)
@@ -60,7 +65,7 @@ def register(
     if not archivist_role:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Default role is not configured",
+            detail="Archivist role is not configured",
         )
 
     user = User(
@@ -72,6 +77,24 @@ def register(
     )
 
     db.add(user)
+
+    create_audit_log(
+    db,
+    user=current_admin,
+    action="USER_CREATED",
+    entity_type="USER",
+    entity_id=user.id,
+    description=(
+        f"Admin '{current_admin.username}' "
+        f"created archivist '{user.username}'."
+    ),
+    details={
+        "username": user.username,
+        "email": user.email,
+        "role": archivist_role.name,
+    },
+)
+    
     db.commit()
     db.refresh(user)
 
@@ -82,8 +105,6 @@ def register(
         "role": archivist_role.name,
         "is_active": user.is_active,
     }
-
-
 
 @router.post(
     "/login",
@@ -139,4 +160,107 @@ def get_me(
         "email": current_user.email,
         "role": role.name if role else "UNKNOWN",
         "is_active": current_user.is_active,
+    }
+
+
+
+@router.get(
+    "/users",
+    response_model=list[UserResponse],
+)
+def get_users(
+    db: Session = Depends(get_db),
+    current_admin: User = Depends(get_current_admin),
+):
+    users = db.scalars(
+        select(User)
+        .order_by(User.created_at.desc())
+    ).all()
+
+    result = []
+
+    for user in users:
+        role = db.get(Role, user.role_id)
+
+        result.append(
+            {
+                "id": str(user.id),
+                "username": user.username,
+                "email": user.email,
+                "role": role.name if role else "UNKNOWN",
+                "is_active": user.is_active,
+            }
+        )
+
+    return result
+
+
+@router.patch(
+    "/users/{user_id}/status",
+    response_model=UserResponse,
+)
+def update_user_status(
+    user_id: uuid.UUID,
+    is_active: bool,
+    db: Session = Depends(get_db),
+    current_admin: User = Depends(get_current_admin),
+):
+    user = db.get(
+        User,
+        user_id,
+    )
+
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found",
+        )
+
+    role = db.get(
+        Role,
+        user.role_id,
+    )
+
+    if not role or role.name != "ARCHIVIST":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Only archivists can be managed here",
+        )
+
+    old_status = user.is_active
+
+    user.is_active = is_active
+
+    create_audit_log(
+    db,
+    user=current_admin,
+    action="USER_STATUS_CHANGED",
+    entity_type="USER",
+    entity_id=user.id,
+    description=(
+        f"Admin '{current_admin.username}' "
+        f"changed user '{user.username}' "
+        f"status from "
+        f"{'active' if old_status else 'inactive'} "
+        f"to "
+        f"{'active' if is_active else 'inactive'}."
+    ),
+    details={
+        "username": user.username,
+        "old_status": old_status,
+        "new_status": is_active,
+    },
+)
+
+    
+
+    db.commit()
+    db.refresh(user)
+
+    return {
+        "id": str(user.id),
+        "username": user.username,
+        "email": user.email,
+        "role": role.name,
+        "is_active": user.is_active,
     }

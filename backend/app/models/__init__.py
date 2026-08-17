@@ -6,6 +6,7 @@ from app.models.hospitalization import Hospitalization
 from app.models.document import Document
 from app.models.document_extraction import DocumentExtraction
 from app.models.document_ai_result import DocumentAIResult
+from app.models.audit_log import AuditLog
 
 __all__ = [
     "Role",
@@ -16,4 +17,6 @@ __all__ = [
     "Document",
     "DocumentExtraction",
     "DocumentAIResult",
+    "AuditLog",
+
 ]
