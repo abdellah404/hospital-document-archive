@@ -13,6 +13,7 @@ import { AuthService } from '../../../core/services/auth';
   standalone: true,
   imports: [ReactiveFormsModule],
   templateUrl: './login.html',
+  styleUrl: './login.css',
 })
 export class LoginComponent {
   private fb = inject(FormBuilder);
@@ -43,7 +44,7 @@ export class LoginComponent {
         error: (error) => {
           this.errorMessage =
             error.error?.detail ??
-            'Login failed';
+            'Échec de la connexion';
         },
       });
   }

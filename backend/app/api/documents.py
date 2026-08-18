@@ -167,12 +167,12 @@ async def upload_document(
         create_audit_log(
         db,
         user=current_user,
-        action="DOCUMENT_UPLOADED",
+        action="document importe",
         entity_type="DOCUMENT",
         entity_id=document.id,
         description=(
-        f"Archivist '{current_user.username}' "
-        f"uploaded document "
+        f"'{current_user.username}' "
+        f"a importé le document "
         f"'{document.original_filename}'."
     ),
         details={

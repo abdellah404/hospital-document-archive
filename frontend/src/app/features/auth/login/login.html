@@ -1,58 +1,41 @@
-<div class="flex min-h-screen items-center justify-center bg-gray-100 px-4">
-  <div class="w-full max-w-md rounded-xl bg-white p-8 shadow-lg">
+<main class="login-page">
+  <section class="login-visual" aria-label="Présentation des archives hospitalières">
+    <div class="visual-content">
+      <img class="login-logo" src="logo-chp.png" alt="Logo CHP" />
+      <p class="visual-kicker">CENTRE HOSPITALIER PROVINCIAL</p>
+      <h1>Vos archives médicales, organisées et sécurisées.</h1>
+      <p class="visual-description">Retrouvez les dossiers importants de votre établissement dans un espace centralisé, simple et confidentiel.</p>
+    </div>
+    <span class="visual-footer">Plateforme interne d’archivage hospitalier</span>
+  </section>
 
-    <h1 class="mb-2 text-2xl font-bold">
-      Hospital Archive
-    </h1>
+  <section class="login-panel">
+    <div class="login-card">
+      <div class="mobile-brand"><img src="logo-chp.png" alt="Logo CHP" /></div>
+      <p class="eyebrow">ESPACE SÉCURISÉ</p>
+      <h2>Bienvenue</h2>
+      <p class="intro">Connectez-vous à votre espace d’archives hospitalières.</p>
 
-    <p class="mb-6 text-gray-500">
-      Sign in to your account
-    </p>
+      <form [formGroup]="form" (ngSubmit)="submit()">
+        <label for="username">Nom d’utilisateur</label>
+        <input id="username" type="text" formControlName="username" autocomplete="username" placeholder="Votre nom d’utilisateur" />
+        @if (form.controls.username.touched && form.controls.username.invalid) {
+          <span class="field-error">Le nom d’utilisateur est requis.</span>
+        }
 
-    <form
-      [formGroup]="form"
-      (ngSubmit)="submit()"
-      class="space-y-4"
-    >
+        <label for="password">Mot de passe</label>
+        <input id="password" type="password" formControlName="password" autocomplete="current-password" placeholder="Votre mot de passe" />
+        @if (form.controls.password.touched && form.controls.password.invalid) {
+          <span class="field-error">Le mot de passe est requis.</span>
+        }
 
-      <div>
-        <label class="mb-1 block text-sm font-medium">
-          Username
-        </label>
+        @if (errorMessage) {
+          <p class="error-message" role="alert">{{ errorMessage }}</p>
+        }
 
-        <input
-          type="text"
-          formControlName="username"
-          class="w-full rounded-lg border px-3 py-2"
-        />
-      </div>
-
-      <div>
-        <label class="mb-1 block text-sm font-medium">
-          Password
-        </label>
-
-        <input
-          type="password"
-          formControlName="password"
-          class="w-full rounded-lg border px-3 py-2"
-        />
-      </div>
-
-      @if (errorMessage) {
-        <p class="text-sm text-red-600">
-          {{ errorMessage }}
-        </p>
-      }
-
-      <button
-        type="submit"
-        class="w-full rounded-lg bg-blue-600 px-4 py-2 font-medium text-white"
-      >
-        Login
-      </button>
-
-    </form>
-
-  </div>
-</div>
+        <button type="submit">Se connecter</button>
+      </form>
+      <p class="login-note">Accès réservé au personnel autorisé.</p>
+    </div>
+  </section>
+</main>

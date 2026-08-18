@@ -1,2 +1,17 @@
-/* You can add global styles to this file, and also import other style files */
 @import "tailwindcss";
+
+:root {
+  --brand-navy: #243f78;
+  --brand-navy-light: #31518d;
+  --brand-green: #3db780;
+  --surface-page: #f7f9fc;
+  --text-strong: #243452;
+  --text-muted: #718096;
+  --border: #e3eaf2;
+}
+
+html, body, button, input, select, textarea {
+  font-family: "Avenir Next", "Century Gothic", "Trebuchet MS", sans-serif;
+}
+
+body { background: var(--surface-page); }

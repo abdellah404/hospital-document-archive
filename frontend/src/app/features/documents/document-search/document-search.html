@@ -1,0 +1,76 @@
+<div class="search-page">
+  <div class="page-heading mt-10">
+    <div>
+      <h1>Rechercher des documents</h1>
+    </div>
+  </div>
+  <section class="search-box"><mat-icon>search</mat-icon><input [(ngModel)]="query" (keyup.enter)="search()"
+      type="search" placeholder="Nom du patient, CNI ou numéro d’hospitalisation"
+      aria-label="Rechercher des documents"><button class="search-button" type="button"
+      (click)="search()">Rechercher</button>@if (query) { <button class="clear-button" type="button"
+      (click)="clear()">Effacer</button> }</section>
+  <section class="filters" aria-label="Filtres de date">
+    <label>Filtrer par date
+      <select [(ngModel)]="dateMode" (ngModelChange)="onDateModeChange()">
+        <option value="all">Toutes les dates</option>
+        <option value="date">Jour précis</option>
+        <option value="month">Mois</option>
+        <option value="year">Année</option>
+        <option value="last_days">Derniers jours</option>
+        <option value="last_months">Derniers mois</option>
+      </select>
+    </label>
+    @if (dateMode === 'date') { <label>Date <input [(ngModel)]="date" type="date" (keyup.enter)="search()"></label> }
+    @if (dateMode === 'month') { <label>Mois <input [(ngModel)]="month" type="month" (keyup.enter)="search()"></label> }
+    @if (dateMode === 'year') { <label>Année <input [(ngModel)]="year" type="number" min="2000" max="2100"
+        placeholder="2026" (keyup.enter)="search()"></label> }
+    @if (dateMode === 'last_days') { <label>Nombre de jours <input [(ngModel)]="lastDays" type="number" min="1"
+        max="3650" placeholder="30" (keyup.enter)="search()"></label> }
+    @if (dateMode === 'last_months') { <label>Nombre de mois <input [(ngModel)]="lastMonths" type="number" min="1"
+        max="120" placeholder="2" (keyup.enter)="search()"></label> }
+    @if (dateMode !== 'all') { <button class="filter-button" type="button" (click)="search()">Appliquer</button> }
+  </section>
+  <section class="results-card">
+    <div class="results-heading">
+      <div>
+        <h2>Dossiers archivés</h2>
+        <p class="muted">{{ total() }} document{{ total() === 1 ? '' : 's' }} trouvé{{ total() === 1 ? '' : 's' }}</p>
+      </div><span class="secure-label"><mat-icon>lock</mat-icon> Archives sécurisées</span>
+    </div>
+    @if (errorMessage()) { <p class="error-message">{{ errorMessage() }}</p> }
+    @if (loading()) { <div class="state">Recherche dans les archives…</div> }
+    @if (!loading() && !documents().length && !errorMessage()) { <div class="state">
+      <mat-icon>search_off</mat-icon><strong>Aucun document archivé trouvé</strong><span>Essayez un autre nom, une CNI
+        ou un numéro d’hospitalisation.</span>
+    </div> }
+    @if (!loading() && documents().length) { <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Document</th>
+            <th>Patient</th>
+            <th>Hospitalisation</th>
+            <th>Service</th>
+            <th>Archivé le</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>@for (document of documents(); track document.id) { <tr>
+            <td>
+              <div class="document-name"><mat-icon>picture_as_pdf</mat-icon><span>{{ document.original_filename
+                  }}</span></div>
+            </td>
+            <td><strong>{{ document.patient.first_name }} {{ document.patient.last_name }}</strong><small>{{
+                document.patient.cni }}</small></td>
+            <td>{{ document.hospitalization.number }}</td>
+            <td>{{ document.service.name }}</td>
+            <td>{{ document.archived_at | date:'d MMM y' }}</td>
+            <td>
+              <div class="row-actions"><button type="button" class="table-action"
+                  (click)="openDetails(document)"><mat-icon>info</mat-icon> Détails</button></div>
+            </td>
+          </tr>}</tbody>
+      </table>
+    </div> }
+  </section>
+</div>

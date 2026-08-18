@@ -88,26 +88,9 @@ export class DocumentImportComponent
 
 
   readonly steps = [
-    {
-      key: 'import',
-      label: 'Import PDF',
-    },
-    {
-      key: 'ocr',
-      label: 'OCR',
-    },
-    {
-      key: 'ai',
-      label: 'Gemini AI',
-    },
-    {
-      key: 'review',
-      label: 'Review information',
-    },
-    {
-      key: 'verify',
-      label: 'Verify & archive',
-    },
+    { key: 'import', label: 'Importer' },
+    { key: 'review', label: 'Réviser' },
+    { key: 'verify', label: 'Vérifier et archiver' },
   ] as const;
 
 
@@ -220,7 +203,7 @@ export class DocumentImportComponent
         null;
 
       this.errorMessage =
-        'Only PDF files are accepted.';
+        'Seuls les fichiers PDF sont acceptés.';
 
       return;
     }
@@ -242,7 +225,7 @@ export class DocumentImportComponent
     if (!this.selectedFile) {
 
       this.errorMessage =
-        'Please select a PDF document first.';
+        'Veuillez sélectionner un document PDF.';
 
       return;
     }
@@ -257,7 +240,7 @@ export class DocumentImportComponent
       '';
 
     this.processingMessage =
-      'Uploading PDF...';
+      'Téléversement du PDF…';
 
 
     this.documentService
@@ -276,10 +259,10 @@ export class DocumentImportComponent
             true;
 
           this.message =
-            'PDF imported successfully.';
+            'PDF importé avec succès.';
 
           this.processingMessage =
-            'Document received. Background processing started.';
+            'Document reçu. Le traitement en arrière-plan a démarré.';
 
           this.processingPercent = 5;
 
@@ -304,7 +287,7 @@ export class DocumentImportComponent
 
           this.errorMessage =
             error.error?.detail ??
-            'PDF import failed.';
+            'Échec de l’importation du PDF.';
         },
       });
   }
@@ -341,7 +324,7 @@ export class DocumentImportComponent
                 true;
 
               this.processingMessage =
-                'Waiting for background OCR job...';
+                'En attente du traitement du document…';
 
               this.scheduleStatusPoll();
 
@@ -356,7 +339,7 @@ export class DocumentImportComponent
                 true;
 
               this.processingMessage =
-                'OCR is reading the PDF...';
+                'Le document est en cours d’analyse…';
 
               this.scheduleStatusPoll();
 
@@ -371,7 +354,7 @@ export class DocumentImportComponent
                 true;
 
               this.processingMessage =
-                'Gemini AI is extracting the patient information...';
+                'Extraction des informations du patient en cours…';
 
               this.scheduleStatusPoll();
 
@@ -420,7 +403,7 @@ export class DocumentImportComponent
               this.processingPercent = 0;
 
               this.errorMessage =
-                'OCR processing failed.';
+                'Échec du traitement du document.';
 
               break;
 
@@ -438,7 +421,7 @@ export class DocumentImportComponent
               this.processingPercent = 0;
 
               this.errorMessage =
-                'Gemini AI processing failed.';
+                'Échec de l’extraction des informations.';
 
               break;
 
@@ -456,7 +439,7 @@ export class DocumentImportComponent
               this.processingPercent = 0;
 
               this.errorMessage =
-                'Background document processing failed.';
+                'Le traitement du document a échoué.';
 
               break;
 
@@ -474,7 +457,7 @@ export class DocumentImportComponent
               this.processingPercent = 0;
 
               this.errorMessage =
-                'The background job could not finish.';
+                'Le traitement en arrière-plan n’a pas pu aboutir.';
 
               break;
 
@@ -488,7 +471,7 @@ export class DocumentImportComponent
                 '';
 
               this.errorMessage =
-                `Unknown document status: ${documentStatus}`;
+                `Statut de document inconnu : ${documentStatus}`;
           }
 
           this.changeDetector.detectChanges();
@@ -504,7 +487,7 @@ export class DocumentImportComponent
 
           this.errorMessage =
             error.error?.detail ??
-            'Could not check document status.';
+            'Impossible de vérifier le statut du document.';
 
           this.changeDetector.detectChanges();
         },
@@ -609,7 +592,7 @@ export class DocumentImportComponent
             'review';
 
           this.message =
-            'Information extracted. Please review every field.';
+            'Informations extraites. Vérifiez chaque champ.';
 
           this.reviewLoadAttempts = 0;
 
@@ -623,7 +606,7 @@ export class DocumentImportComponent
           if (this.reviewLoadAttempts < 5) {
             this.reviewLoadAttempts += 1;
             this.processingMessage =
-              'Document is ready. Loading extracted information...';
+              'Document prêt. Chargement des informations extraites…';
             this.reviewRetryTimer();
             return;
           }
@@ -632,7 +615,7 @@ export class DocumentImportComponent
           this.processingMessage = '';
           this.errorMessage =
             error.error?.detail ??
-            'Could not load document review.';
+            'Impossible de charger la révision du document.';
 
           this.changeDetector.detectChanges();
         },
@@ -670,7 +653,7 @@ export class DocumentImportComponent
         error: () => {
 
           this.errorMessage =
-            'Could not load hospital services.';
+            'Impossible de charger les services hospitaliers.';
         },
       });
   }
@@ -690,7 +673,7 @@ export class DocumentImportComponent
     ) {
 
       this.errorMessage =
-        'Please complete all required information.';
+        'Veuillez remplir tous les champs obligatoires.';
 
       return;
     }
@@ -700,7 +683,7 @@ export class DocumentImportComponent
     ) {
 
       this.errorMessage =
-        'Discharge date cannot be before admission date.';
+        'La date de sortie ne peut pas être antérieure à la date d’admission.';
 
       return;
     }
@@ -709,7 +692,7 @@ export class DocumentImportComponent
       'verify';
 
     this.message =
-      'Please verify the information against the original PDF.';
+      'Vérifiez les informations avec le PDF original.';
   }
 
 
@@ -719,7 +702,7 @@ export class DocumentImportComponent
       'review';
 
     this.message =
-      'You can correct the extracted information.';
+      'Vous pouvez corriger les informations extraites.';
   }
 
 
@@ -738,7 +721,7 @@ export class DocumentImportComponent
     ) {
 
       this.errorMessage =
-        'Complete all required information before archiving.';
+      'Remplissez tous les champs obligatoires avant l’archivage.';
 
       return;
     }
@@ -763,7 +746,7 @@ export class DocumentImportComponent
       '';
 
     this.processingMessage =
-      'Saving verified information and archiving document...';
+        'Enregistrement des informations et archivage du document…';
 
 
     this.documentService
@@ -831,7 +814,7 @@ export class DocumentImportComponent
 
           this.errorMessage =
             error.error?.detail ??
-            'Document could not be archived.';
+            'Le document n’a pas pu être archivé.';
 
           this.changeDetector.detectChanges();
         },
@@ -872,7 +855,7 @@ export class DocumentImportComponent
         error: () => {
 
           this.errorMessage =
-            'Could not load the PDF preview.';
+            'Impossible de charger l’aperçu du PDF.';
         },
       });
   }
@@ -1027,32 +1010,16 @@ export class DocumentImportComponent
   // PROGRESS
   // ========================================================
 
-  isStepCompleted(
-    step: WorkflowStep,
-  ): boolean {
+  isStepActive(step: 'import' | 'review' | 'verify'): boolean {
+    if (step === 'import') return ['import', 'ocr', 'ai'].includes(this.currentStep);
+    return this.currentStep === step;
+  }
 
-    const order:
-      WorkflowStep[] = [
-
-      'import',
-
-      'ocr',
-
-      'ai',
-
-      'review',
-
-      'verify',
-
-      'archived',
-    ];
-
-    return (
-      order.indexOf(step)
-      <
-      order.indexOf(
-        this.currentStep
-      )
-    );
+  isStepCompleted(step: 'import' | 'review' | 'verify'): boolean {
+    const visibleOrder = ['import', 'review', 'verify', 'archived'];
+    const currentVisibleStep = this.currentStep === 'ocr' || this.currentStep === 'ai'
+      ? 'import'
+      : this.currentStep;
+    return visibleOrder.indexOf(step) < visibleOrder.indexOf(currentVisibleStep);
   }
 }

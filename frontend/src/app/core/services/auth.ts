@@ -1,4 +1,4 @@
-import { Injectable, inject } from '@angular/core';
+import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, tap } from 'rxjs';
 import { User } from '../models/user';
@@ -29,6 +29,8 @@ export class AuthService {
 
   private apiUrl = environment.apiUrl;
 
+  readonly currentUser = signal<User | null>(null);
+
   login(data: LoginRequest): Observable<TokenResponse> {
     return this.http
       .post<TokenResponse>(
@@ -41,6 +43,7 @@ export class AuthService {
             'access_token',
             response.access_token
           );
+          this.getCurrentUser().subscribe({ next: user => this.currentUser.set(user) });
         })
       );
   }
@@ -55,7 +58,11 @@ export class AuthService {
   getCurrentUser(): Observable<User> {
     return this.http.get<User>(
       `${this.apiUrl}/auth/me`
-    );
+    ).pipe(tap(user => this.currentUser.set(user)));
+  }
+
+  isAdmin(): boolean {
+    return this.currentUser()?.role === 'ADMIN';
   }
 
   getToken(): string | null {
@@ -68,5 +75,6 @@ export class AuthService {
 
   logout(): void {
     localStorage.removeItem('access_token');
+    this.currentUser.set(null);
   }
 }

@@ -24,6 +24,22 @@ export interface DocumentResponse {
   created_at: string;
 }
 
+export interface ArchivedDocument {
+  id: string;
+  original_filename: string;
+  status: string;
+  created_at: string;
+  archived_at: string | null;
+  patient: { id: string; cni: string; first_name: string; last_name: string };
+  hospitalization: { id: string; number: string; admission_date: string | null; discharge_date: string | null };
+  service: { id: string; name: string; is_active: boolean };
+}
+
+export interface ArchivedDocumentResponse {
+  items: ArchivedDocument[];
+  pagination: { page: number; page_size: number; total: number; total_pages: number };
+}
+
 
 export interface DocumentStatusResponse {
   document_id: string;
@@ -163,6 +179,14 @@ export class DocumentService {
       `${this.apiUrl}/documents/upload`,
       formData,
     );
+  }
+
+  getDocuments(): Observable<DocumentResponse[]> {
+    return this.http.get<DocumentResponse[]>(`${this.apiUrl}/documents`);
+  }
+
+  searchArchived(params: Record<string, string | number>): Observable<ArchivedDocumentResponse> {
+    return this.http.get<ArchivedDocumentResponse>(`${this.apiUrl}/documents/archived`, { params });
   }
 
 

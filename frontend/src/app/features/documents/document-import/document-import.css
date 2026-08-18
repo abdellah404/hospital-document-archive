@@ -12,20 +12,13 @@
     color: #172033;
   }
 
-  .page-header {
-    padding: 42px 24px 34px;
-    background: #172d4f;
-    color: white;
-  }
+  .page-header { padding: 0 0 26px; color: #172b4d; }
 
-  .page-header > div {
-    width: min(1100px, 100%);
-    margin: 0 auto;
-  }
+  .page-header > div { width: 100%; margin: 0 auto; }
 
   .eyebrow {
     margin: 0 0 8px;
-    color: #8fb8f2;
+    color: #3678dd;
     font-size: 12px;
     font-weight: 700;
     letter-spacing: 0.16em;
@@ -37,14 +30,11 @@
     margin-top: 0;
   }
 
-  h1 {
-    margin-bottom: 8px;
-    font-size: 34px;
-  }
+  h1 { margin-bottom: 8px; font-size: 34px; letter-spacing: -.04em; }
 
   .subtitle {
     margin-bottom: 0;
-    color: #c8d6ea;
+    color: #718096;
   }
 
   .workflow-container {

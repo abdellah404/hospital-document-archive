@@ -1,0 +1,165 @@
+<div class="admin-page">
+  <div class="page-heading mt-10">
+    <div>
+      <h1>Centre de gestion</h1>
+    </div>
+  </div>
+  @if (message()) { <p class="success">{{ message() }}</p> } @if (error()) { <p class="error">{{ error() }}</p> }
+  @if (section() === 'users') {
+  <section class="content-card">
+    <div class="section-heading">
+      <div>
+        <h2>Archivistes</h2>
+        <p class="muted">{{ filteredUsers().length }} compte(s) affiché(s) sur {{ users().length }}</p>
+      </div><button class="primary-action" type="button" (click)="openUserModal()"><mat-icon>person_add</mat-icon>
+        Nouvel archiviste</button>
+    </div>
+    <div class="list-filters"><label>Rechercher<input [ngModel]="userQuery()" (ngModelChange)="userQuery.set($event)"
+          placeholder="Nom ou email"></label><label>Afficher<select [ngModel]="userStatus()"
+          (ngModelChange)="userStatus.set($event)">
+          <option value="all">Tous</option>
+          <option value="active">Actifs</option>
+          <option value="inactive">Inactifs</option>
+        </select></label></div>
+  </section>
+  <section class="content-card">
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Utilisateur</th>
+            <th>Email</th>
+            <th>Statut</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>@for (user of filteredUsers(); track user.id) {<tr>
+            <td><strong>{{ user.username }}</strong></td>
+            <td>{{ user.email }}</td>
+            <td><span class="status" [class.active-status]="user.is_active">{{ user.is_active ? 'Actif' : 'Inactif'
+                }}</span></td>
+            <td><button class="table-action" (click)="toggleUser(user)">{{ user.is_active ? 'Désactiver' : 'Activer'
+                }}</button></td>
+          </tr>}</tbody>
+      </table>
+    </div>
+  </section>
+  }
+  @if (section() === 'services') {
+  <section class="content-card">
+    <div class="section-heading">
+      <div>
+        <div class="list-filters"><label>Afficher<select [ngModel]="serviceStatus()"
+              (ngModelChange)="serviceStatus.set($event)">
+              <option value="all">Tous</option>
+              <option value="active">Actifs</option>
+              <option value="inactive">Inactifs</option>
+            </select></label></div>
+      </div><button class="primary-action" type="button" (click)="openServiceModal()"><mat-icon>add</mat-icon> Nouveau
+        service</button>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Service</th>
+            <th>Statut</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>@for (service of filteredServices(); track service.id) {<tr>
+            <td><strong>{{ service.name }}</strong></td>
+            <td><span class="status" [class.active-status]="service.is_active">{{ service.is_active ? 'Actif' :
+                'Inactif' }}</span></td>
+            <td><button class="table-action" (click)="toggleService(service)">{{ service.is_active ? 'Désactiver' :
+                'Activer' }}</button></td>
+          </tr>}</tbody>
+      </table>
+    </div>
+  </section>
+  }
+  @if (section() === 'logs') { <section class="content-card">
+    <div class="section-heading">
+      <div>
+        <h2>Journal d’activité</h2>
+        <p class="muted">Les actions sensibles réalisées dans l’application.</p>
+      </div><button class="refresh" (click)="loadAll()"><mat-icon>refresh</mat-icon> Actualiser</button>
+    </div>
+    <div class="list-filters log-filters"><label>Rechercher<input [ngModel]="logQuery()"
+          (ngModelChange)="logQuery.set($event)" placeholder="Utilisateur ou détail"></label><label>Type d’action<select
+          [ngModel]="logAction()" (ngModelChange)="logAction.set($event)">
+          <option value="all">Toutes les actions</option>
+          <option value="DOCUMENT_ARCHIVED">Document archivé</option>
+          <option value="USER_CREATED">Utilisateur créé</option>
+          <option value="USER_STATUS_CHANGED">Statut utilisateur modifié</option>
+          <option value="SERVICE_CREATED">Service créé</option>
+          <option value="SERVICE_STATUS_CHANGED">Statut service modifié</option>
+        </select></label></div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Utilisateur</th>
+            <th>Action</th>
+            <th>Détail</th>
+          </tr>
+        </thead>
+        <tbody>@for (log of filteredLogs(); track log.id) {<tr>
+            <td>{{ log.created_at | date:'dd/MM/yyyy HH:mm' }}</td>
+            <td>{{ log.username ?? 'Système' }}</td>
+            <td><span class="action-label">{{ actionLabel(log.action) }}</span></td>
+            <td>{{ log.description }}</td>
+          </tr>} @empty {<tr>
+            <td colspan="4" class="empty">Aucune activité enregistrée.</td>
+          </tr>}</tbody>
+      </table>
+    </div>
+  </section> }
+</div>
+
+@if (showUserModal()) {
+<div class="modal-backdrop" role="presentation" (click)="closeUserModal()">
+  <section class="modal-card" role="dialog" aria-modal="true" aria-labelledby="user-modal-title"
+    (click)="$event.stopPropagation()">
+    <div class="modal-heading">
+      <div>
+        <p class="eyebrow">ADMINISTRATION</p>
+        <h2 id="user-modal-title">Nouvel archiviste</h2>
+      </div><button class="modal-close" type="button" aria-label="Fermer"
+        (click)="closeUserModal()"><mat-icon>close</mat-icon></button>
+    </div>
+    <p class="muted">Les comptes sont créés uniquement par un administrateur.</p>
+    <form class="modal-form" [formGroup]="userForm" (ngSubmit)="createUser()"><label>Nom d’utilisateur<input
+          formControlName="username" placeholder="ex. archiviste.marie"></label><label>Email<input type="email"
+          formControlName="email" placeholder="marie@hopital.fr"></label><label>Mot de passe<input type="password"
+          formControlName="password" placeholder="8 caractères minimum"></label>
+      <div class="modal-actions"><button class="secondary-action" type="button"
+          (click)="closeUserModal()">Annuler</button><button class="primary-action"
+          type="submit"><mat-icon>person_add</mat-icon> Créer le compte</button></div>
+    </form>
+  </section>
+</div>
+}
+@if (showServiceModal()) {
+<div class="modal-backdrop" role="presentation" (click)="closeServiceModal()">
+  <section class="modal-card small-modal" role="dialog" aria-modal="true" aria-labelledby="service-modal-title"
+    (click)="$event.stopPropagation()">
+    <div class="modal-heading">
+      <div>
+        <p class="eyebrow">ADMINISTRATION</p>
+        <h2 id="service-modal-title">Nouveau service</h2>
+      </div><button class="modal-close" type="button" aria-label="Fermer"
+        (click)="closeServiceModal()"><mat-icon>close</mat-icon></button>
+    </div>
+    <form class="modal-form" [formGroup]="serviceForm" (ngSubmit)="createService()">
+      <label>Nom du service<input formControlName="name" placeholder="ex. Cardiologie">
+      </label>
+      <div class="modal-actions"><button class="secondary-action" type="button"
+          (click)="closeServiceModal()">Annuler</button><button class="primary-action"
+          type="submit"><mat-icon>add</mat-icon> Ajouter</button></div>
+    </form>
+  </section>
+</div>
+}

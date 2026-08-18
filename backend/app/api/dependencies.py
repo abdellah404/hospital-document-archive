@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from app.core.security import decode_access_token, oauth2_scheme
 from app.db.session import get_db
 from app.models.user import User
-from backend.app.models.role import Role
+from app.models.role import Role
 
 
 def get_current_user(

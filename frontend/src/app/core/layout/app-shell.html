@@ -1,0 +1,60 @@
+<div class="shell">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark"><img src="logo-chp.png" alt="CHP" /></div>
+      <div>
+        <strong>CHP Archive</strong>
+        <span>Archives hospitalières</span>
+      </div>
+    </div>
+
+    <nav class="main-nav" aria-label="Navigation principale">
+      <p class="nav-label">Espace de travail</p>
+      <a routerLink="/dashboard" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
+        <mat-icon>grid_view</mat-icon><span>Tableau de bord</span>
+      </a>
+      <a routerLink="/documents/import" routerLinkActive="active">
+        <mat-icon>upload_file</mat-icon><span>Importer un document</span>
+      </a>
+      <a routerLink="/documents/search" routerLinkActive="active">
+        <mat-icon>search</mat-icon><span>Rechercher des documents</span>
+      </a>
+      @if (user()?.role === 'ADMIN') {
+        <p class="nav-label admin-label">Administration</p>
+        
+          <a routerLink="/admin/users" routerLinkActive="active"><mat-icon>group</mat-icon><span>Utilisateurs</span></a>
+          <a routerLink="/admin/services" routerLinkActive="active"><mat-icon>medical_services</mat-icon><span>Services</span></a>
+          <a routerLink="/admin/logs" routerLinkActive="active"><mat-icon>history</mat-icon><span>Journal d’activité</span></a>
+      }
+    </nav>
+
+    <div class="sidebar-footer">
+     
+      <button class="logout-link" type="button" (click)="logout()">
+        <mat-icon>logout</mat-icon><span>Déconnexion</span>
+      </button>
+    </div>
+  </aside>
+
+  <section class="content-area">
+    <header class="topbar">
+      <div class="mobile-brand"><img src="logo-chp.png" alt="CHP" /><strong>CHP Archive</strong></div>
+      <div class="topbar-actions">
+        <button mat-icon-button aria-label="Paramètres" matTooltip="Paramètres" [matMenuTriggerFor]="settingsMenu">
+          <mat-icon>settings</mat-icon>
+        </button>
+        <span class="topbar-divider"></span>
+        <button class="profile-button" type="button" [matMenuTriggerFor]="profileMenu">
+          <span class="avatar">{{ (user()?.username ?? 'U').charAt(0).toUpperCase() }}</span>
+          <span class="profile-copy"><strong>{{ user()?.username ?? 'Utilisateur' }}</strong><small>{{ user()?.role === 'ADMIN' ? 'Administrateur' : 'Archiviste' }}</small></span>
+          <mat-icon>expand_more</mat-icon>
+        </button>
+      </div>
+    </header>
+
+    <main class="page-content"><router-outlet></router-outlet></main>
+  </section>
+</div>
+
+<mat-menu #settingsMenu="matMenu"><button mat-menu-item><mat-icon>tune</mat-icon><span>Préférences</span></button></mat-menu>
+<mat-menu #profileMenu="matMenu"><button mat-menu-item (click)="logout()"><mat-icon>logout</mat-icon><span>Déconnexion</span></button></mat-menu>

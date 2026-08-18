@@ -13,7 +13,7 @@ html {
         primary: mat.$azure-palette,
         tertiary: mat.$blue-palette,
       ),
-      typography: Roboto,
+      typography: (brand-family: 'Avenir Next, Century Gothic, Trebuchet MS, sans-serif', plain-family: 'Avenir Next, Century Gothic, Trebuchet MS, sans-serif'),
       density: 0,
     )
   );

@@ -1,24 +1,16 @@
 <div class="archivist-page">
 
-  <header class="page-header">
 
     <div>
 
-      <p class="eyebrow">
-        ARCHIVIST WORKFLOW
-      </p>
-
+    
       <h1>
-        Hospital Archive
+        Archiver un document
       </h1>
 
-      <p class="subtitle">
-        Import, extract, review, verify, and archive patient documents.
-      </p>
-
+      
     </div>
 
-  </header>
 
 
   <main class="workflow-container">
@@ -38,7 +30,7 @@
 
         <div
           class="workflow-step"
-          [class.active]="currentStep === step.key"
+          [class.active]="isStepActive(step.key)"
           [class.completed]="isStepCompleted(step.key)"
         >
 
@@ -116,7 +108,7 @@
       <div class="background-progress">
 
         <div class="background-progress-header">
-          <span>Background processing</span>
+          <span>Traitement en arrière-plan</span>
           <strong>{{ processingPercent }}%</strong>
         </div>
 
@@ -127,7 +119,7 @@
             [style.width.%]="processingPercent"></div>
         </div>
 
-        <small>OCR → Gemini AI → ready for archivist review</small>
+        <small>Analyse du document → extraction des informations → révision</small>
 
       </div>
 
@@ -139,7 +131,7 @@
     <!-- ================================================= -->
 
     @if (
-      currentStep === 'import'
+      currentStep === 'import' || currentStep === 'ocr' || currentStep === 'ai'
     ) {
 
       <section class="workflow-card">
@@ -149,19 +141,17 @@
         </div>
 
         <h2>
-          Import PDF document
+          Importer un document PDF
         </h2>
 
-        <p class="card-description">
-          Select the medical document that must be archived.
-        </p>
+       
 
 
         <label
           class="field-label"
           for="pdfFile"
         >
-          PDF document
+          Document PDF
         </label>
 
 
@@ -217,8 +207,8 @@
 
           {{
             isProcessing
-              ? 'Importing...'
-              : 'Import PDF'
+              ? 'Importation…'
+              : 'Importer le PDF'
           }}
 
         </button>
@@ -233,7 +223,7 @@
     <!-- ================================================= -->
 
     @if (
-      currentStep === 'ocr'
+      false && currentStep === 'ocr'
     ) {
 
       <section
@@ -249,7 +239,7 @@
         </h2>
 
         <p class="card-description">
-          The background worker is processing the scanned PDF.
+          Le traitement du document est en cours en arrière-plan.
         </p>
 
         <div class="process-box">
@@ -259,7 +249,7 @@
           </span>
 
           <strong>
-            Optical Character Recognition
+            Analyse automatique du document
           </strong>
 
           <span>
@@ -278,7 +268,7 @@
     <!-- ================================================= -->
 
     @if (
-      currentStep === 'ai'
+      false && currentStep === 'ai'
     ) {
 
       <section
@@ -300,23 +290,23 @@
         <div class="extraction-list">
 
           <div>
-            Patient information
+            Informations du patient
           </div>
 
           <div>
-            Hospitalization number
+            Numéro d’hospitalisation
           </div>
 
           <div>
-            Hospital service
+            Service hospitalier
           </div>
 
           <div>
-            Admission date
+            Date d’admission
           </div>
 
           <div>
-            Discharge date
+            Date de sortie
           </div>
 
         </div>
@@ -345,11 +335,11 @@
         </div>
 
         <h2>
-          Archivist review
+          Révision du document
         </h2>
 
         <p class="card-description">
-          Review and verify every extracted value against the original PDF.
+          Vérifiez chaque information extraite avec le PDF original.
         </p>
 
 
@@ -361,7 +351,7 @@
 
             <iframe
               [src]="pdfViewerUrl"
-              title="Document preview"
+              title="Aperçu du document"
             ></iframe>
 
           </div>
@@ -459,7 +449,7 @@
                 value=""
                 disabled
               >
-                Select a service
+                Sélectionnez un service
               </option>
 
 
@@ -530,7 +520,7 @@
               type="button"
               (click)="openVerification()"
             >
-              Information is correct
+              Les informations sont correctes
             </button>
 
           </div>
@@ -568,7 +558,7 @@
               type="button"
               (click)="correctInformation()"
             >
-              Correct information
+              Corriger les informations
             </button>
 
 
@@ -581,8 +571,8 @@
 
               {{
                 isProcessing
-                  ? 'Archiving...'
-                  : 'Verify & Archive'
+                  ? 'Archivage…'
+                  : 'Vérifier et archiver'
               }}
 
             </button>
@@ -613,11 +603,11 @@
         </div>
 
         <h2>
-          Document archived
+          Document archivé
         </h2>
 
         <p class="card-description">
-          The archivist verified the information and completed the archive workflow.
+          Les informations ont été vérifiées et le document a été archivé.
         </p>
 
 
@@ -653,7 +643,7 @@
           <div>
 
             <span>
-              Hospitalization
+              Hospitalisation
             </span>
 
             <strong>
@@ -712,7 +702,7 @@
           type="button"
           (click)="resetWorkflow()"
         >
-          Import another document
+          Importer un autre document
         </button>
 
       </section>
