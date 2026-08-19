@@ -12,6 +12,7 @@ import { AuthService } from '../services/auth';
   templateUrl: './app-shell.html',
   styleUrl: './app-shell.css',
 })
+
 export class AppShellComponent implements OnInit {
   private readonly authService = inject(AuthService);
   private readonly router = inject(Router);
