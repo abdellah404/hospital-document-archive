@@ -5,7 +5,7 @@ import { Router, RouterLink } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 
 import { AuthService } from '../../core/services/auth';
-import { ArchivedDocument, DocumentResponse, DocumentService } from '../../core/services/document';
+import { DocumentResponse, DocumentService } from '../../core/services/document';
 
 @Component({
   selector: 'app-dashboard',
@@ -135,9 +135,5 @@ export class DashboardComponent implements OnInit {
     );
   }
 
-  openDetails(document: ArchivedDocument): void {
-      this.router.navigate(['/documents', document.id], { state: { document } });
-    }
-
-
+  
 }

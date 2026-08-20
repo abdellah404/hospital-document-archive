@@ -79,11 +79,8 @@
                 <button class="table-action" type="button"
                   (click)="continueDocument(document)"><mat-icon>restart_alt</mat-icon>Reprendre</button>
                 }
-                @if (document.status === 'ARCHIVED') { 
-
-                    <div class="row-actions"><button type="button" class="table-action"
-                    (click)="openDetails(document)"><mat-icon>info</mat-icon> Détails</button></div>
-                 }
+                @if (document.status === 'ARCHIVED') { <a class="table-action" routerLink="/documents/search">Détails
+                  <mat-icon>chevron_right</mat-icon></a> }
               </div>
             </td>
           </tr> }
