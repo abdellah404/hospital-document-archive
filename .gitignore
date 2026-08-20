@@ -43,6 +43,6 @@ backend/storage/documents/
 
 graphify-out/
 
-CHATGPT_PROJECT_CONTEXT.txt
+ARCHIVE_PROJECT_CONTEXT.txt
 PROJECT_WORKFLOW_ROADMAP.txt
 make_chatgpt_context.sh

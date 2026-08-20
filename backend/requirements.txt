@@ -35,4 +35,7 @@ typing_extensions==4.16.0
 uvicorn==0.52.1
 uvloop==0.22.1
 watchfiles==1.2.0
-websockets==17.0.1
+websockets==16.0.0
+google-genai==2.16.0
+pytesseract==0.3.13
+pdf2image==1.17.0
