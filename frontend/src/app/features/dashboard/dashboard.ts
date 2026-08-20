@@ -5,7 +5,7 @@ import { Router, RouterLink } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 
 import { AuthService } from '../../core/services/auth';
-import { DocumentResponse, DocumentService } from '../../core/services/document';
+import { ArchivedDocument, DocumentResponse, DocumentService } from '../../core/services/document';
 
 @Component({
   selector: 'app-dashboard',
@@ -36,31 +36,61 @@ export class DashboardComponent implements OnInit {
     this.loading.set(true);
     this.errorMessage.set('');
     this.documentService.getDocuments().subscribe({
-      next: documents => { this.documents.set(documents); this.loading.set(false); },
-      error: () => { this.loading.set(false); this.errorMessage.set('Impossible de charger l’activité des documents.'); },
+      next: (documents) => {
+        this.documents.set(documents);
+        this.loading.set(false);
+      },
+      error: () => {
+        this.loading.set(false);
+        this.errorMessage.set('Impossible de charger l’activité des documents.');
+      },
     });
   }
 
-  get archivedCount(): number { return this.documents().filter(document => document.status === 'ARCHIVED').length; }
-  get processingCount(): number { return this.documents().filter(document => !['ARCHIVED', 'OCR_ERROR', 'AI_ERROR', 'PROCESSING_ERROR', 'ARCHIVE_ERROR'].includes(document.status)).length; }
+  get archivedCount(): number {
+    return this.documents().filter((document) => document.status === 'ARCHIVED').length;
+  }
+  get processingCount(): number {
+    return this.documents().filter(
+      (document) =>
+        !['ARCHIVED', 'OCR_ERROR', 'AI_ERROR', 'PROCESSING_ERROR', 'ARCHIVE_ERROR'].includes(
+          document.status,
+        ),
+    ).length;
+  }
   readonly filteredRecentDocuments = computed(() => {
     const filter = this.documentFilter();
     const filtered = this.documents().filter((document) => {
       if (filter === 'archived') return document.status === 'ARCHIVED';
-      if (filter === 'errors') return ['OCR_ERROR', 'AI_ERROR', 'PROCESSING_ERROR', 'ARCHIVE_ERROR'].includes(document.status);
-      if (filter === 'processing') return !['ARCHIVED', 'OCR_ERROR', 'AI_ERROR', 'PROCESSING_ERROR', 'ARCHIVE_ERROR'].includes(document.status);
+      if (filter === 'errors')
+        return ['OCR_ERROR', 'AI_ERROR', 'PROCESSING_ERROR', 'ARCHIVE_ERROR'].includes(
+          document.status,
+        );
+      if (filter === 'processing')
+        return !['ARCHIVED', 'OCR_ERROR', 'AI_ERROR', 'PROCESSING_ERROR', 'ARCHIVE_ERROR'].includes(
+          document.status,
+        );
       return true;
     });
     return filtered.slice(0, 5);
   });
-  get recentDocuments(): DocumentResponse[] { return this.filteredRecentDocuments(); }
+  get recentDocuments(): DocumentResponse[] {
+    return this.filteredRecentDocuments();
+  }
 
   canResume(status: string): boolean {
-    return ['IMPORTED', 'OCR_ERROR', 'AI_ERROR', 'PROCESSING_ERROR', 'ARCHIVE_ERROR'].includes(status);
+    return ['IMPORTED', 'OCR_ERROR', 'AI_ERROR', 'PROCESSING_ERROR', 'ARCHIVE_ERROR'].includes(
+      status,
+    );
   }
 
   resumeDocument(document: DocumentResponse): void {
-    if (this.user()?.role !== 'ADMIN' || !this.canResume(document.status) || this.resumingDocumentId()) return;
+    if (
+      this.user()?.role !== 'ADMIN' ||
+      !this.canResume(document.status) ||
+      this.resumingDocumentId()
+    )
+      return;
 
     this.resumingDocumentId.set(document.id);
     this.errorMessage.set('');
@@ -72,9 +102,11 @@ export class DashboardComponent implements OnInit {
           state: { documentId: document.id, resumed: true },
         });
       },
-      error: error => {
+      error: (error) => {
         this.resumingDocumentId.set(null);
-        this.errorMessage.set(error.error?.detail ?? 'Impossible de relancer le traitement du document.');
+        this.errorMessage.set(
+          error.error?.detail ?? 'Impossible de relancer le traitement du document.',
+        );
       },
     });
   }
@@ -86,16 +118,26 @@ export class DashboardComponent implements OnInit {
   }
 
   statusLabel(status: string): string {
-    return ({
-      IMPORTED: 'Importé',
-      OCR_PROCESSING: 'Analyse du document',
-      AI_PROCESSING: 'Extraction des informations',
-      READY_FOR_REVIEW: 'À vérifier',
-      ARCHIVED: 'Archivé',
-      OCR_ERROR: 'Erreur d’analyse',
-      AI_ERROR: 'Erreur d’extraction',
-      PROCESSING_ERROR: 'Erreur de traitement',
-      ARCHIVE_ERROR: 'Erreur d’archivage',
-    } as Record<string, string>)[status] ?? status.replaceAll('_', ' ');
+    return (
+      (
+        {
+          IMPORTED: 'Importé',
+          OCR_PROCESSING: 'Analyse du document',
+          AI_PROCESSING: 'Extraction des informations',
+          READY_FOR_REVIEW: 'À vérifier',
+          ARCHIVED: 'Archivé',
+          OCR_ERROR: 'Erreur d’analyse',
+          AI_ERROR: 'Erreur d’extraction',
+          PROCESSING_ERROR: 'Erreur de traitement',
+          ARCHIVE_ERROR: 'Erreur d’archivage',
+        } as Record<string, string>
+      )[status] ?? status.replaceAll('_', ' ')
+    );
   }
+
+  openDetails(document: ArchivedDocument): void {
+      this.router.navigate(['/documents', document.id], { state: { document } });
+    }
+
+
 }
