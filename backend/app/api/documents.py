@@ -24,6 +24,7 @@ from sqlalchemy.orm import Session
 
 from app.api.dependencies import (
     get_current_user,
+    get_current_admin
 )
 
 from app.db.session import get_db
@@ -1297,5 +1298,655 @@ def verify_document(
             status_code=500,
             detail=(
                 "Failed to archive document"
+            ),
+        )
+
+
+
+# ============================================================
+# ADMIN - UPDATE ARCHIVED DOCUMENT
+# ============================================================
+
+@router.patch(
+    "/{document_id}/archive",
+)
+def update_archived_document(
+    document_id: uuid.UUID,
+    payload: DocumentVerificationRequest,
+    db: Session = Depends(get_db),
+    current_admin: User = Depends(
+        get_current_admin
+    ),
+):
+    # Lock the document while the correction is being made.
+    document = db.scalar(
+        select(Document)
+        .where(
+            Document.id == document_id
+        )
+        .with_for_update()
+    )
+
+    if document is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Document not found",
+        )
+
+    if document.status != "ARCHIVED":
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                "Only archived documents "
+                "can be modified"
+            ),
+        )
+
+    if document.hospitalization_id is None:
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                "Archived document has no "
+                "hospitalization"
+            ),
+        )
+
+    if (
+        payload.discharge_date
+        and payload.discharge_date
+        < payload.admission_date
+    ):
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                "Discharge date cannot be "
+                "before admission date"
+            ),
+        )
+
+    try:
+        # ====================================================
+        # CURRENT DATA
+        # ====================================================
+
+        hospitalization = db.get(
+            Hospitalization,
+            document.hospitalization_id,
+        )
+
+        if hospitalization is None:
+            raise HTTPException(
+                status_code=404,
+                detail="Hospitalization not found",
+            )
+
+        current_patient = db.get(
+            Patient,
+            hospitalization.patient_id,
+        )
+
+        if current_patient is None:
+            raise HTTPException(
+                status_code=404,
+                detail="Patient not found",
+            )
+
+        # ====================================================
+        # SERVICE
+        # ====================================================
+
+        try:
+            service_id = uuid.UUID(
+                payload.service_id
+            )
+
+        except ValueError:
+            raise HTTPException(
+                status_code=400,
+                detail="Invalid service ID",
+            )
+
+        service = db.get(
+            Service,
+            service_id,
+        )
+
+        if service is None:
+            raise HTTPException(
+                status_code=404,
+                detail="Service not found",
+            )
+
+        # Note:
+        # We intentionally allow an inactive service here.
+        # This is historical archive correction, not creation
+        # of a new hospitalization.
+
+        # ====================================================
+        # NORMALIZE INPUT
+        # ====================================================
+
+        cni = payload.cni.strip()
+
+        first_name = (
+            payload.first_name.strip()
+        )
+
+        last_name = (
+            payload.last_name.strip()
+        )
+
+        hospitalization_number = (
+            payload
+            .hospitalization_number
+            .strip()
+        )
+
+        if not cni:
+            raise HTTPException(
+                status_code=400,
+                detail="CNI cannot be empty",
+            )
+
+        if not first_name:
+            raise HTTPException(
+                status_code=400,
+                detail="First name cannot be empty",
+            )
+
+        if not last_name:
+            raise HTTPException(
+                status_code=400,
+                detail="Last name cannot be empty",
+            )
+
+        if not hospitalization_number:
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    "Hospitalization number "
+                    "cannot be empty"
+                ),
+            )
+
+        # ====================================================
+        # SAVE BEFORE VALUES FOR AUDIT
+        # ====================================================
+
+        old_values = {
+            "cni": current_patient.cni,
+            "first_name": (
+                current_patient.first_name
+            ),
+            "last_name": (
+                current_patient.last_name
+            ),
+            "hospitalization_number": (
+                hospitalization
+                .hospitalization_number
+            ),
+            "service_id": str(
+                hospitalization.service_id
+            ),
+            "admission_date": (
+                hospitalization
+                .admission_date
+                .isoformat()
+            ),
+            "discharge_date": (
+                hospitalization
+                .discharge_date
+                .isoformat()
+                if hospitalization.discharge_date
+                else None
+            ),
+        }
+
+        # ====================================================
+        # HOSPITALIZATION NUMBER CONFLICT
+        # ====================================================
+
+        conflicting_hospitalization = (
+            db.scalar(
+                select(Hospitalization)
+                .where(
+                    Hospitalization
+                    .hospitalization_number
+                    == hospitalization_number,
+                    Hospitalization.id
+                    != hospitalization.id,
+                )
+            )
+        )
+
+        if conflicting_hospitalization:
+            raise HTTPException(
+                status_code=409,
+                detail=(
+                    "Hospitalization number "
+                    "already belongs to another "
+                    "hospitalization"
+                ),
+            )
+
+        # ====================================================
+        # PATIENT
+        # ====================================================
+        #
+        # Patient records may be shared by several
+        # hospitalizations.
+        #
+        # Therefore:
+        #
+        # 1. If the requested CNI already belongs to another
+        #    patient, link the hospitalization to that patient
+        #    only if the names also match.
+        #
+        # 2. If changing the identity of a patient who has
+        #    several hospitalizations, create a new patient
+        #    instead of modifying all historical records.
+        #
+        # 3. Otherwise update the current patient directly.
+        # ====================================================
+
+        patient_with_cni = db.scalar(
+            select(Patient).where(
+                Patient.cni == cni
+            )
+        )
+
+        patient: Patient
+
+        if (
+            patient_with_cni is not None
+            and
+            patient_with_cni.id
+            != current_patient.id
+        ):
+            names_match = (
+                patient_with_cni
+                .first_name
+                .strip()
+                .lower()
+                == first_name.lower()
+                and
+                patient_with_cni
+                .last_name
+                .strip()
+                .lower()
+                == last_name.lower()
+            )
+
+            if not names_match:
+                raise HTTPException(
+                    status_code=409,
+                    detail=(
+                        "The requested CNI "
+                        "already belongs to another "
+                        "patient with different names"
+                    ),
+                )
+
+            # Relink only this hospitalization.
+            patient = patient_with_cni
+
+            hospitalization.patient_id = (
+                patient.id
+            )
+
+        else:
+            identity_changed = (
+                current_patient.cni != cni
+                or
+                current_patient
+                .first_name
+                .strip()
+                .lower()
+                != first_name.lower()
+                or
+                current_patient
+                .last_name
+                .strip()
+                .lower()
+                != last_name.lower()
+            )
+
+            hospitalization_count = (
+                db.scalar(
+                    select(
+                        func.count(
+                            Hospitalization.id
+                        )
+                    )
+                    .where(
+                        Hospitalization
+                        .patient_id
+                        == current_patient.id
+                    )
+                )
+                or 0
+            )
+
+            if (
+                identity_changed
+                and hospitalization_count > 1
+            ):
+                # Do not modify patient data used by
+                # other hospitalizations.
+
+                patient = Patient(
+                    cni=cni,
+                    first_name=first_name,
+                    last_name=last_name,
+                )
+
+                db.add(patient)
+
+                db.flush()
+
+                hospitalization.patient_id = (
+                    patient.id
+                )
+
+            else:
+                patient = current_patient
+
+                patient.cni = cni
+
+                patient.first_name = (
+                    first_name
+                )
+
+                patient.last_name = (
+                    last_name
+                )
+
+        # ====================================================
+        # UPDATE HOSPITALIZATION
+        # ====================================================
+
+        hospitalization.hospitalization_number = (
+            hospitalization_number
+        )
+
+        hospitalization.service_id = (
+            service.id
+        )
+
+        hospitalization.admission_date = (
+            payload.admission_date
+        )
+
+        hospitalization.discharge_date = (
+            payload.discharge_date
+        )
+
+        # ====================================================
+        # IMPORTANT
+        # ====================================================
+        #
+        # Do NOT modify:
+        #
+        # document.archived_at
+        # DocumentAIResult
+        # DocumentExtraction
+        #
+        # archived_at = original archival timestamp.
+        # AI/OCR = original machine extraction history.
+        #
+        # The verified Patient/Hospitalization values are the
+        # corrected archive data.
+        # ====================================================
+
+        new_values = {
+            "cni": patient.cni,
+            "first_name": (
+                patient.first_name
+            ),
+            "last_name": (
+                patient.last_name
+            ),
+            "hospitalization_number": (
+                hospitalization
+                .hospitalization_number
+            ),
+            "service_id": str(
+                hospitalization.service_id
+            ),
+            "admission_date": (
+                hospitalization
+                .admission_date
+                .isoformat()
+            ),
+            "discharge_date": (
+                hospitalization
+                .discharge_date
+                .isoformat()
+                if hospitalization.discharge_date
+                else None
+            ),
+        }
+
+        # ====================================================
+        # AUDIT
+        # ====================================================
+
+        create_audit_log(
+            db,
+            user=current_admin,
+            action="DOCUMENT_ARCHIVE_UPDATED",
+            entity_type="DOCUMENT",
+            entity_id=document.id,
+            description=(
+                f"Admin "
+                f"'{current_admin.username}' "
+                f"modified archived document "
+                f"'{document.original_filename}'."
+            ),
+            details={
+                "filename": (
+                    document.original_filename
+                ),
+                "old_values": old_values,
+                "new_values": new_values,
+            },
+        )
+
+        db.commit()
+
+        return {
+            "message": (
+                "Archived document updated "
+                "successfully"
+            ),
+            "document_id": str(
+                document.id
+            ),
+            "patient_id": str(
+                patient.id
+            ),
+            "hospitalization_id": str(
+                hospitalization.id
+            ),
+            "service_id": str(
+                service.id
+            ),
+            "status": document.status,
+            "data": new_values,
+        }
+
+    except HTTPException:
+        db.rollback()
+        raise
+
+    except Exception:
+        db.rollback()
+
+        raise HTTPException(
+            status_code=500,
+            detail=(
+                "Failed to update archived "
+                "document"
+            ),
+        )
+
+
+# ============================================================
+# ADMIN - RESUME DOCUMENT PROCESSING
+# ============================================================
+
+@router.post(
+    "/{document_id}/resume",
+)
+def resume_document_processing(
+    document_id: uuid.UUID,
+    db: Session = Depends(get_db),
+    current_admin: User = Depends(
+        get_current_admin
+    ),
+):
+    document = db.scalar(
+        select(Document)
+        .where(
+            Document.id == document_id
+        )
+        .with_for_update()
+    )
+
+    if document is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Document not found",
+        )
+
+    current_status = (
+        document.status
+        .strip()
+        .upper()
+    )
+
+    # Already finished.
+    if current_status == "ARCHIVED":
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                "Document is already archived"
+            ),
+        )
+
+    # This is not an error.
+    # Automatic processing has finished and
+    # human verification is required.
+    if current_status == "READY_FOR_REVIEW":
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                "Document processing is already "
+                "complete and is waiting for review"
+            ),
+        )
+
+    # Avoid starting a second Celery job while another
+    # worker may currently be processing the document.
+    if current_status in {
+        "OCR_PROCESSING",
+        "AI_PROCESSING",
+    }:
+        raise HTTPException(
+            status_code=409,
+            detail=(
+                "Document is currently being "
+                "processed"
+            ),
+        )
+
+    resumable_statuses = {
+        "IMPORTED",
+        "OCR_ERROR",
+        "AI_ERROR",
+        "PROCESSING_ERROR",
+        "ARCHIVE_ERROR",
+    }
+
+    if current_status not in resumable_statuses:
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                f"Document cannot be resumed "
+                f"from status {current_status}"
+            ),
+        )
+
+    file_path = Path(
+        document.storage_path
+    )
+
+    if not file_path.exists():
+        raise HTTPException(
+            status_code=404,
+            detail="Document file not found",
+        )
+
+    try:
+        # Keep the current status until the worker
+        # actually starts processing.
+        #
+        # This avoids showing OCR_PROCESSING while
+        # the task is still waiting inside Redis.
+
+        task = process_document.delay(
+            str(document.id)
+        )
+
+        create_audit_log(
+            db,
+            user=current_admin,
+            action="DOCUMENT_PROCESSING_RESUMED",
+            entity_type="DOCUMENT",
+            entity_id=document.id,
+            description=(
+                f"Admin "
+                f"'{current_admin.username}' "
+                f"resumed processing of document "
+                f"'{document.original_filename}' "
+                f"from status '{current_status}'."
+            ),
+            details={
+                "filename": (
+                    document.original_filename
+                ),
+                "previous_status": (
+                    current_status
+                ),
+                "celery_task_id": (
+                    task.id
+                ),
+            },
+        )
+
+        db.commit()
+
+        return {
+            "message": (
+                "Document processing has been "
+                "queued for resumption"
+            ),
+            "document_id": str(
+                document.id
+            ),
+            "previous_status": (
+                current_status
+            ),
+            "task_id": task.id,
+        }
+
+    except Exception:
+        db.rollback()
+
+        raise HTTPException(
+            status_code=503,
+            detail=(
+                "Document exists but processing "
+                "could not be queued"
             ),
         )

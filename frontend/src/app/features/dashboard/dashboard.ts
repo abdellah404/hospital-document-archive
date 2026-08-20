@@ -22,6 +22,8 @@ export class DashboardComponent implements OnInit {
   readonly documents = signal<DocumentResponse[]>([]);
   readonly loading = signal(true);
   readonly errorMessage = signal('');
+  readonly successMessage = signal('');
+  readonly resumingDocumentId = signal<string | null>(null);
   readonly documentFilter = signal<'all' | 'archived' | 'processing' | 'errors'>('all');
 
   ngOnInit(): void {
@@ -51,4 +53,41 @@ export class DashboardComponent implements OnInit {
     return filtered.slice(0, 5);
   });
   get recentDocuments(): DocumentResponse[] { return this.filteredRecentDocuments(); }
+
+  canResume(status: string): boolean {
+    return ['IMPORTED', 'OCR_ERROR', 'AI_ERROR', 'PROCESSING_ERROR', 'ARCHIVE_ERROR'].includes(status);
+  }
+
+  resumeDocument(document: DocumentResponse): void {
+    if (this.user()?.role !== 'ADMIN' || !this.canResume(document.status) || this.resumingDocumentId()) return;
+
+    this.resumingDocumentId.set(document.id);
+    this.errorMessage.set('');
+    this.successMessage.set('');
+    this.documentService.resumeProcessing(document.id).subscribe({
+      next: () => {
+        this.resumingDocumentId.set(null);
+        this.successMessage.set('Le traitement du document a été relancé.');
+        this.loadDocuments();
+      },
+      error: error => {
+        this.resumingDocumentId.set(null);
+        this.errorMessage.set(error.error?.detail ?? 'Impossible de relancer le traitement du document.');
+      },
+    });
+  }
+
+  statusLabel(status: string): string {
+    return ({
+      IMPORTED: 'Importé',
+      OCR_PROCESSING: 'Analyse du document',
+      AI_PROCESSING: 'Extraction des informations',
+      READY_FOR_REVIEW: 'À vérifier',
+      ARCHIVED: 'Archivé',
+      OCR_ERROR: 'Erreur d’analyse',
+      AI_ERROR: 'Erreur d’extraction',
+      PROCESSING_ERROR: 'Erreur de traitement',
+      ARCHIVE_ERROR: 'Erreur d’archivage',
+    } as Record<string, string>)[status] ?? status.replaceAll('_', ' ');
+  }
 }

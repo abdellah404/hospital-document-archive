@@ -1,7 +1,8 @@
 :host { display: block; }
-.page-heading { margin: 28px 0 24px; }
+.page-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin: 28px 0 24px; }
 .page-heading .page-title { overflow-wrap: anywhere; font-size: 30px; }
 .details-layout { display: grid; grid-template-columns: 280px minmax(0, 1fr); gap: 22px; }
+.details-layout.editing { grid-template-columns: 380px minmax(0, 1fr); }
 .info-card h2, .preview-card h2 { margin-bottom: 20px; }
 .info-list { display: flex; flex-direction: column; gap: 17px; }
 .info-list span { display: block; margin-bottom: 4px; color: #91a0b3; font-size: 10px; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; }
@@ -10,9 +11,15 @@
 .preview-card iframe { width: 100%; min-height: 580px; flex: 1; border: 1px solid #dbe5f0; border-radius: 8px; background: #f8fafc; }
 .preview-state { display: grid; min-height: 300px; flex: 1; place-items: center; border: 1px solid #dbe5f0; border-radius: 8px; color: #718096; font-size: 13px; text-align: center; }
 .error-card { margin-top: 24px; color: #c33d45; }
+.edit-form { display: grid; gap: 14px; }
+.form-message { margin: 0; }
+.form-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 6px; }
+.confirmation-panel { border: 1px solid #fde68a; border-radius: 10px; background: #fffbeb; padding: 14px; color: #78350f; font-size: 13px; }
+.confirmation-panel p { margin: 6px 0 14px; line-height: 1.5; }
 
 @media (max-width: 800px) {
   .details-layout { grid-template-columns: 1fr; }
+  .details-layout.editing { grid-template-columns: 1fr; }
   .preview-card { min-height: 520px; }
   .preview-card iframe { min-height: 460px; }
 }

@@ -7,9 +7,11 @@ from sqlalchemy import select
 from app.db.session import SessionLocal
 
 from app.models.document import Document
+
 from app.models.document_ai_result import (
     DocumentAIResult,
 )
+
 from app.models.document_extraction import (
     DocumentExtraction,
 )
@@ -31,7 +33,9 @@ from app.tasks.celery_app import (
 
 class DatabaseTask(Task):
 
-    autoretry_for = (Exception,)
+    autoretry_for = (
+        Exception,
+    )
 
     retry_backoff = True
 
@@ -40,6 +44,7 @@ class DatabaseTask(Task):
     retry_kwargs = {
         "max_retries": 3,
     }
+
 
 @celery_app.task(
     bind=True,
@@ -53,9 +58,8 @@ def process_document(
     db = SessionLocal()
 
     try:
-
         # =====================================================
-        # FIND DOCUMENT
+        # DOCUMENT
         # =====================================================
 
         document = db.get(
@@ -65,9 +69,48 @@ def process_document(
 
         if document is None:
             return {
-                "status": "DOCUMENT_NOT_FOUND",
-                "document_id": document_id,
+                "status": (
+                    "DOCUMENT_NOT_FOUND"
+                ),
+                "document_id": (
+                    document_id
+                ),
             }
+
+        current_status = (
+            document.status
+            .strip()
+            .upper()
+        )
+
+        # =====================================================
+        # ALREADY FINISHED
+        # =====================================================
+
+        if current_status == "ARCHIVED":
+            return {
+                "status": "ARCHIVED",
+                "document_id": (
+                    document_id
+                ),
+            }
+
+        if (
+            current_status
+            == "READY_FOR_REVIEW"
+        ):
+            return {
+                "status": (
+                    "READY_FOR_REVIEW"
+                ),
+                "document_id": (
+                    document_id
+                ),
+            }
+
+        # =====================================================
+        # FILE
+        # =====================================================
 
         file_path = Path(
             document.storage_path
@@ -87,157 +130,252 @@ def process_document(
             )
 
         # =====================================================
-        # OCR
+        # CHECK OCR CHECKPOINT
         # =====================================================
 
-        document.status = "OCR_PROCESSING"
-
-        db.commit()
-
-        try:
-
-            text = extract_text_from_pdf(
-                str(file_path)
-            )
-
-        except Exception:
-
-            document.status = "OCR_ERROR"
-
-            db.commit()
-
-            raise
-
         extraction = db.scalar(
-            select(DocumentExtraction).where(
-                DocumentExtraction.document_id
+            select(
+                DocumentExtraction
+            ).where(
+                DocumentExtraction
+                .document_id
                 == document.id
             )
         )
 
+        # =====================================================
+        # OCR
+        # =====================================================
+        #
+        # Only execute OCR when no successful OCR
+        # extraction already exists.
+        # =====================================================
+
         if extraction is None:
 
-            extraction = DocumentExtraction(
-                document_id=document.id,
-                ocr_text=text,
+            document.status = (
+                "OCR_PROCESSING"
             )
 
-            db.add(extraction)
+            db.commit()
+
+            try:
+                text = (
+                    extract_text_from_pdf(
+                        str(file_path)
+                    )
+                )
+
+            except Exception:
+
+                document.status = (
+                    "OCR_ERROR"
+                )
+
+                db.commit()
+
+                raise
+
+            extraction = (
+                DocumentExtraction(
+                    document_id=(
+                        document.id
+                    ),
+                    ocr_text=text,
+                )
+            )
+
+            db.add(
+                extraction
+            )
+
+            # This commit is an important checkpoint.
+            #
+            # If AI fails later, OCR remains safely stored.
+            db.commit()
 
         else:
+            text = (
+                extraction.ocr_text
+            )
 
-            extraction.ocr_text = text
+        # =====================================================
+        # CHECK AI CHECKPOINT
+        # =====================================================
 
-        db.commit()
+        ai_result = db.scalar(
+            select(
+                DocumentAIResult
+            ).where(
+                DocumentAIResult
+                .document_id
+                == document.id
+            )
+        )
 
         # =====================================================
         # AI
         # =====================================================
-
-        document.status = "AI_PROCESSING"
-
-        db.commit()
-
-        services = db.scalars(
-            select(Service).where(
-                Service.is_active.is_(True)
-            )
-        ).all()
-
-        service_names = [
-            service.name
-            for service in services
-        ]
-
-        if not service_names:
-            raise ValueError(
-                "No active hospital services exist"
-            )
-
-        try:
-
-            result = (
-                extract_patient_information(
-                    text,
-                    service_names,
-                )
-            )
-
-        except Exception:
-
-            document.status = "AI_ERROR"
-
-            db.commit()
-
-            raise
-
+        #
+        # Only execute Gemini when no successfully persisted
+        # AI result exists.
         # =====================================================
-        # SAVE AI RESULT
-        # =====================================================
-
-        ai_result = db.scalar(
-            select(DocumentAIResult).where(
-                DocumentAIResult.document_id
-                == document.id
-            )
-        )
 
         if ai_result is None:
 
-            ai_result = DocumentAIResult(
-                document_id=document.id,
+            document.status = (
+                "AI_PROCESSING"
             )
 
-            db.add(ai_result)
+            db.commit()
 
-        ai_result.cni = result.get(
-            "cni"
-        )
+            services = db.scalars(
+                select(Service).where(
+                    Service
+                    .is_active
+                    .is_(True)
+                )
+            ).all()
 
-        ai_result.first_name = result.get(
-            "first_name"
-        )
+            service_names = [
+                service.name
+                for service
+                in services
+            ]
 
-        ai_result.last_name = result.get(
-            "last_name"
-        )
+            if not service_names:
 
-        ai_result.hospitalization_number = (
-            result.get(
-                "hospitalization_number"
+                document.status = (
+                    "AI_ERROR"
+                )
+
+                db.commit()
+
+                raise ValueError(
+                    "No active hospital "
+                    "services exist"
+                )
+
+            try:
+                result = (
+                    extract_patient_information(
+                        text,
+                        service_names,
+                    )
+                )
+
+            except Exception:
+
+                document.status = (
+                    "AI_ERROR"
+                )
+
+                db.commit()
+
+                raise
+
+            # =================================================
+            # BUILD AI RESULT
+            # =================================================
+
+            ai_result = (
+                DocumentAIResult(
+                    document_id=(
+                        document.id
+                    ),
+                )
             )
-        )
 
-        ai_result.service_name = (
-            result.get("service")
-        )
-
-        admission_date = result.get(
-            "admission_date"
-        )
-
-        discharge_date = result.get(
-            "discharge_date"
-        )
-
-        ai_result.admission_date = (
-            date.fromisoformat(
-                admission_date
+            ai_result.cni = (
+                result.get(
+                    "cni"
+                )
             )
-            if admission_date
-            else None
-        )
 
-        ai_result.discharge_date = (
-            date.fromisoformat(
-                discharge_date
+            ai_result.first_name = (
+                result.get(
+                    "first_name"
+                )
             )
-            if discharge_date
-            else None
-        )
+
+            ai_result.last_name = (
+                result.get(
+                    "last_name"
+                )
+            )
+
+            ai_result.hospitalization_number = (
+                result.get(
+                    "hospitalization_number"
+                )
+            )
+
+            ai_result.service_name = (
+                result.get(
+                    "service"
+                )
+            )
+
+            admission_date = (
+                result.get(
+                    "admission_date"
+                )
+            )
+
+            discharge_date = (
+                result.get(
+                    "discharge_date"
+                )
+            )
+
+            try:
+                ai_result.admission_date = (
+                    date.fromisoformat(
+                        admission_date
+                    )
+                    if admission_date
+                    else None
+                )
+
+                ai_result.discharge_date = (
+                    date.fromisoformat(
+                        discharge_date
+                    )
+                    if discharge_date
+                    else None
+                )
+
+            except ValueError:
+
+                document.status = (
+                    "AI_ERROR"
+                )
+
+                db.commit()
+
+                raise ValueError(
+                    "AI returned an invalid "
+                    "date format"
+                )
+
+            db.add(
+                ai_result
+            )
+
+            # =================================================
+            # AI CHECKPOINT
+            # =================================================
+            #
+            # Commit the AI result separately.
+            #
+            # This means a later crash does not force
+            # Gemini to run again.
+            # =================================================
+
+            db.commit()
 
         # =====================================================
-        # READY FOR MANUAL ARCHIVIST REVIEW
+        # READY FOR HUMAN REVIEW
         # =====================================================
 
         document.status = (
@@ -247,16 +385,17 @@ def process_document(
         db.commit()
 
         return {
-            "status": "READY_FOR_REVIEW",
-            "document_id": document_id,
+            "status": (
+                "READY_FOR_REVIEW"
+            ),
+            "document_id": (
+                document_id
+            ),
         }
 
     except Exception:
 
         db.rollback()
-
-        # Do not overwrite specific OCR/AI
-        # errors with generic PROCESSING_ERROR.
 
         document = db.get(
             Document,
@@ -264,6 +403,11 @@ def process_document(
         )
 
         if document is not None:
+
+            # Keep precise errors.
+            #
+            # Do not replace OCR_ERROR or AI_ERROR
+            # with a generic error.
 
             if document.status not in {
                 "OCR_ERROR",
@@ -279,5 +423,4 @@ def process_document(
         raise
 
     finally:
-
         db.close()

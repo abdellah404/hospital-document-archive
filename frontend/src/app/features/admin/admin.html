@@ -91,6 +91,8 @@
           class="app-select" [ngModel]="logAction()" (ngModelChange)="logAction.set($event)">
           <option value="all">Toutes les actions</option>
           <option value="DOCUMENT_ARCHIVED">Document archivé</option>
+          <option value="DOCUMENT_ARCHIVE_UPDATED">Document modifié</option>
+          <option value="DOCUMENT_PROCESSING_RESUMED">Traitement relancé</option>
           <option value="USER_CREATED">Utilisateur créé</option>
           <option value="USER_STATUS_CHANGED">Statut utilisateur modifié</option>
           <option value="SERVICE_CREATED">Service créé</option>

@@ -165,6 +165,8 @@ export class AdminComponent implements OnInit {
       (
         {
           DOCUMENT_ARCHIVED: 'Document archivé',
+          DOCUMENT_ARCHIVE_UPDATED: 'Document modifié',
+          DOCUMENT_PROCESSING_RESUMED: 'Traitement relancé',
           USER_CREATED: 'Utilisateur créé',
           USER_STATUS_CHANGED: 'Statut utilisateur modifié',
           SERVICE_CREATED: 'Service créé',

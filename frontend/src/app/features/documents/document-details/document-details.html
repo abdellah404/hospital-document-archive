@@ -1,33 +1,88 @@
 <div class="page-container">
   <button type="button" class="table-action" (click)="goBack()">← Retour aux résultats</button>
+
   @if (document(); as item) {
-  <header class="page-heading mt-10">
-    <div>
+    <header class="page-heading mt-10">
       <h1 class="page-title">{{ item.original_filename }}</h1>
+      @if (currentUser()?.role === 'ADMIN' && !editing()) {
+        <button class="app-button app-button-primary" type="button" (click)="startEditing()">
+          <mat-icon>edit</mat-icon> Modifier
+        </button>
+      }
+    </header>
+
+    @if (successMessage()) {
+      <p class="app-message app-message-success">{{ successMessage() }}</p>
+    }
+
+    <div class="details-layout" [class.editing]="editing()">
+      <section class="app-card info-card">
+        <h2 class="section-title">Informations du document</h2>
+
+        @if (!editing()) {
+          <div class="info-list">
+            <div><span>Patient</span><strong>{{ item.patient.first_name }} {{ item.patient.last_name }}</strong></div>
+            <div><span>CNI</span><strong>{{ item.patient.cni }}</strong></div>
+            <div><span>Hospitalisation</span><strong>{{ item.hospitalization.number }}</strong></div>
+            <div><span>Service</span><strong>{{ item.service.name }}</strong></div>
+            <div><span>Date d’admission</span><strong>{{ item.hospitalization.admission_date || '—' }}</strong></div>
+            <div><span>Date de sortie</span><strong>{{ item.hospitalization.discharge_date || '—' }}</strong></div>
+            <div><span>Date d’archivage</span><strong>{{ item.archived_at | date:'d MMM y, HH:mm' }}</strong></div>
+            <div><span>Statut</span><strong>Archivé</strong></div>
+          </div>
+        } @else {
+          <form class="edit-form" [formGroup]="editForm" (ngSubmit)="requestSave()">
+            <label class="app-label">CNI *<input class="app-input" formControlName="cni"></label>
+            <label class="app-label">Prénom *<input class="app-input" formControlName="first_name"></label>
+            <label class="app-label">Nom *<input class="app-input" formControlName="last_name"></label>
+            <label class="app-label">Numéro d’hospitalisation *<input class="app-input" formControlName="hospitalization_number"></label>
+            <label class="app-label">Service *
+              <select class="app-select" formControlName="service_id">
+                @if (!services().length) { <option [value]="item.service.id">{{ item.service.name }}</option> }
+                @for (service of services(); track service.id) {
+                  <option [value]="service.id">{{ service.name }}{{ service.is_active ? '' : ' — Inactif' }}</option>
+                }
+              </select>
+            </label>
+            <label class="app-label">Date d’admission *<input class="app-input" type="date" formControlName="admission_date"></label>
+            <label class="app-label">Date de sortie<input class="app-input" type="date" formControlName="discharge_date"></label>
+
+            @if (editError()) { <p class="app-message app-message-error form-message">{{ editError() }}</p> }
+
+            @if (confirming()) {
+              <div class="confirmation-panel">
+                <strong>Confirmer la modification</strong>
+                <p>Vous allez modifier les informations d’un document déjà archivé. Cette action sera enregistrée dans le journal d’activité.</p>
+                <div class="flex justify-end gap-3">
+                  <button class="app-button app-button-secondary" type="button" [disabled]="saving()" (click)="confirming.set(false)">Annuler</button>
+                  <button class="app-button app-button-primary" type="button" [disabled]="saving()" (click)="confirmSave()">{{ saving() ? 'Enregistrement…' : 'Confirmer' }}</button>
+                </div>
+              </div>
+            } @else {
+              <div class="form-actions">
+                <button class="app-button app-button-secondary" type="button" (click)="cancelEditing()">Annuler</button>
+                <button class="app-button app-button-primary" type="submit">Enregistrer</button>
+              </div>
+            }
+          </form>
+        }
+      </section>
+
+      <section class="app-card preview-card">
+        <h2 class="section-title">Aperçu PDF</h2>
+        @if (loading()) {
+          <div class="preview-state">Chargement du PDF…</div>
+        } @else if (errorMessage()) {
+          <div class="preview-state app-message-error">{{ errorMessage() }}</div>
+        } @else if (previewUrl(); as url) {
+          <iframe [src]="url" title="Aperçu du document PDF"></iframe>
+        }
+      </section>
     </div>
-  </header>
-  <div class="details-layout">
-    <section class="app-card info-card">
-      <h2 class="section-title">Informations du document</h2>
-      <div class="info-list">
-        <div><span>Patient</span><strong>{{ item.patient.first_name }} {{ item.patient.last_name }}</strong></div>
-        <div><span>CNI</span><strong>{{ item.patient.cni }}</strong></div>
-        <div><span>Hospitalisation</span><strong>{{ item.hospitalization.number }}</strong></div>
-        <div><span>Service</span><strong>{{ item.service.name }}</strong></div>
-        <div><span>Date d’admission</span><strong>{{ item.hospitalization.admission_date || '—' }}</strong></div>
-        <div><span>Date de sortie</span><strong>{{ item.hospitalization.discharge_date || '—' }}</strong></div>
-        <div><span>Date d’archivage</span><strong>{{ item.archived_at | date:'d MMM y, HH:mm' }}</strong></div>
-        <div><span>Statut</span><strong>{{ item.status }}</strong></div>
-      </div>
+  } @else if (errorMessage()) {
+    <section class="app-card error-card">
+      <p class="app-message app-message-error">{{ errorMessage() }}</p>
+      <button type="button" class="table-action" (click)="goBack()">Retour à la recherche</button>
     </section>
-    <section class="app-card preview-card">
-      <h2 class="section-title">Aperçu PDF</h2>@if (loading()) { <div class="preview-state">Chargement du PDF…</div> } @else if
-      (errorMessage()) { <div class="preview-state app-message-error">{{ errorMessage() }}</div> } @else if (previewUrl();
-      as url) { <iframe [src]="url" title="Aperçu du document PDF"></iframe> }
-    </section>
-  </div>
-  } @else if (errorMessage()) { <section class="app-card error-card">
-    <p class="app-message app-message-error">{{ errorMessage() }}</p><button type="button" class="table-action" (click)="goBack()">Retour
-      à la recherche</button>
-  </section> }
+  }
 </div>

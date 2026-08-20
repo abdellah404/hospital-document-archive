@@ -110,6 +110,8 @@
 .empty-state span {
   margin-bottom: 16px;
 }
+.row-actions { display: flex; align-items: center; gap: 12px; white-space: nowrap; }
+.table-action:disabled { cursor: wait; opacity: .55; }
 
 @media (max-width: 700px) {
   .page-heading {

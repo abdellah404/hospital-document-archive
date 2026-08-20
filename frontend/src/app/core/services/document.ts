@@ -148,6 +148,27 @@ export interface ArchiveResponse {
   status: string;
 }
 
+export interface UpdateArchivedDocumentRequest {
+  cni: string;
+  first_name: string;
+  last_name: string;
+  hospitalization_number: string;
+  service_id: string;
+  admission_date: string;
+  discharge_date: string | null;
+}
+
+export interface UpdateArchivedDocumentResponse extends ArchiveResponse {
+  data: UpdateArchivedDocumentRequest;
+}
+
+export interface ResumeDocumentResponse {
+  message: string;
+  document_id: string;
+  previous_status: string;
+  task_id: string;
+}
+
 
 @Injectable({
   providedIn: 'root',
@@ -240,6 +261,23 @@ export class DocumentService {
     return this.http.post<ArchiveResponse>(
       `${this.apiUrl}/documents/${documentId}/verify`,
       data,
+    );
+  }
+
+  updateArchivedDocument(
+    documentId: string,
+    data: UpdateArchivedDocumentRequest,
+  ): Observable<UpdateArchivedDocumentResponse> {
+    return this.http.patch<UpdateArchivedDocumentResponse>(
+      `${this.apiUrl}/documents/${documentId}/archive`,
+      data,
+    );
+  }
+
+  resumeProcessing(documentId: string): Observable<ResumeDocumentResponse> {
+    return this.http.post<ResumeDocumentResponse>(
+      `${this.apiUrl}/documents/${documentId}/resume`,
+      null,
     );
   }
 }
