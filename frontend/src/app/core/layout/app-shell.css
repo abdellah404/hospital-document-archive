@@ -10,6 +10,35 @@
 .main-nav { display: grid; gap: 5px; }
 .nav-label { margin: 0 12px 10px; color: #7390b1; font-size: 10px; font-weight: 700; letter-spacing: .13em; text-transform: uppercase; }
 .admin-label { margin-top: 18px; }
+.sidebar-link, .sidebar-logout {
+  display: flex;
+  min-height: 44px;
+  align-items: center;
+  gap: 13px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  padding: 10px 12px;
+  color: #b9cbe0;
+  font: inherit;
+  font-size: 14px;
+  line-height: 1.3;
+  text-decoration: none;
+  cursor: pointer;
+}
+.sidebar-link:hover, .sidebar-link.active, .sidebar-logout:hover { background: var(--brand-navy-light); color: white; }
+.sidebar-link.active { box-shadow: inset 3px 0 var(--brand-green); }
+.sidebar-link mat-icon, .sidebar-logout mat-icon {
+  width: 22px;
+  height: 22px;
+  flex: 0 0 22px;
+  overflow: visible;
+  font-size: 20px;
+  line-height: 22px;
+  text-align: center;
+}
+.sidebar-link span, .sidebar-logout span { display: block; min-width: 0; }
+.sidebar-logout { width: 100%; }
 .sidebar-footer { margin-top: auto; }
 .content-area { min-width: 0; flex: 1; }
 .topbar { display: flex; height: 76px; align-items: center; justify-content: flex-end; border-bottom: 1px solid var(--border); background: white; padding: 0 34px; }
@@ -29,6 +58,7 @@
   .sidebar { width: 72px; flex-basis: 72px; padding: 20px 9px; }
   .brand { justify-content: center; padding: 0 0 30px; }
   .brand > div:last-child, .nav-label, .sidebar-link span, .sidebar-logout span { display: none; }
+  .sidebar-link, .sidebar-logout { justify-content: center; gap: 0; padding-inline: 0; }
   .topbar { height: 64px; justify-content: space-between; padding: 0 16px; }
   .mobile-brand { display: flex; gap: 8px; color: var(--brand-navy); }
   .mobile-brand img { width: 28px; height: 28px; object-fit: contain; }

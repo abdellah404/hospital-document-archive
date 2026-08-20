@@ -71,6 +71,9 @@
               @if (user()?.role === 'ADMIN' && canResume(document.status)) {
                 <button class="table-action" type="button" [disabled]="resumingDocumentId() === document.id" (click)="resumeDocument(document)"><mat-icon>restart_alt</mat-icon>{{ resumingDocumentId() === document.id ? 'Relance…' : 'Reprendre' }}</button>
               }
+              @if (document.status === 'READY_FOR_REVIEW') {
+                <button class="table-action" type="button" (click)="continueDocument(document)"><mat-icon>restart_alt</mat-icon>Reprendre</button>
+              }
               @if (document.status === 'ARCHIVED') { <a class="table-action" routerLink="/documents/search">Détails <mat-icon>chevron_right</mat-icon></a> }
             </div></td>
           </tr> }

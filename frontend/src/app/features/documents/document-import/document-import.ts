@@ -3,6 +3,7 @@ import {
   ChangeDetectorRef,
   inject,
   OnDestroy,
+  OnInit,
 } from '@angular/core';
 
 import {
@@ -72,7 +73,7 @@ interface ExtractedInformation {
     './document-import.css',
 })
 export class DocumentImportComponent
-  implements OnDestroy {
+  implements OnDestroy, OnInit {
 
   private documentService =
     inject(DocumentService);
@@ -164,6 +165,34 @@ export class DocumentImportComponent
     null;
 
   private reviewLoadAttempts = 0;
+
+  private waitingForResumedWorker = false;
+
+  private resumedStatusAttempts = 0;
+
+
+  ngOnInit(): void {
+    const state = (history.state ?? {}) as {
+      documentId?: string;
+      resumed?: boolean;
+    };
+
+    if (!state.documentId) {
+      return;
+    }
+
+    this.documentId = state.documentId;
+    this.waitingForResumedWorker = state.resumed === true;
+    this.isProcessing = true;
+    this.currentStep = 'ocr';
+    this.processingPercent = 10;
+    this.processingMessage = this.waitingForResumedWorker
+      ? 'Traitement relancé. Reprise du document…'
+      : 'Chargement du document…';
+    this.loadPdf();
+    this.loadServices();
+    this.pollDocumentStatus();
+  }
 
 
   // ========================================================
@@ -332,6 +361,7 @@ export class DocumentImportComponent
 
 
             case 'OCR_PROCESSING':
+              this.waitingForResumedWorker = false;
               this.currentStep = 'ocr';
               this.processingPercent = 40;
 
@@ -347,6 +377,7 @@ export class DocumentImportComponent
 
 
             case 'AI_PROCESSING':
+              this.waitingForResumedWorker = false;
               this.currentStep = 'ai';
               this.processingPercent = 75;
 
@@ -362,6 +393,7 @@ export class DocumentImportComponent
 
 
             case 'READY_FOR_REVIEW':
+              this.waitingForResumedWorker = false;
               this.stopPolling();
               this.processingPercent = 100;
               this.currentStep = 'review';
@@ -392,6 +424,8 @@ export class DocumentImportComponent
 
             case 'OCR_ERROR':
 
+              if (this.waitForResumedWorker()) break;
+
               this.stopPolling();
 
               this.isProcessing =
@@ -409,6 +443,8 @@ export class DocumentImportComponent
 
 
             case 'AI_ERROR':
+
+              if (this.waitForResumedWorker()) break;
 
               this.stopPolling();
 
@@ -428,6 +464,8 @@ export class DocumentImportComponent
 
             case 'PROCESSING_ERROR':
 
+              if (this.waitForResumedWorker()) break;
+
               this.stopPolling();
 
               this.isProcessing =
@@ -445,6 +483,8 @@ export class DocumentImportComponent
 
 
             case 'ARCHIVE_ERROR':
+
+              if (this.waitForResumedWorker()) break;
 
               this.stopPolling();
 
@@ -513,6 +553,19 @@ export class DocumentImportComponent
         },
         1500,
       );
+  }
+
+
+  private waitForResumedWorker(): boolean {
+    if (!this.waitingForResumedWorker || this.resumedStatusAttempts >= 20) {
+      return false;
+    }
+
+    this.resumedStatusAttempts += 1;
+    this.isProcessing = true;
+    this.processingMessage = 'Traitement relancé. En attente du démarrage…';
+    this.scheduleStatusPoll();
+    return true;
   }
 
 

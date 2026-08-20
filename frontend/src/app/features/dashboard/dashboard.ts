@@ -1,7 +1,7 @@
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 
 import { AuthService } from '../../core/services/auth';
@@ -17,6 +17,7 @@ import { DocumentResponse, DocumentService } from '../../core/services/document'
 export class DashboardComponent implements OnInit {
   private readonly authService = inject(AuthService);
   private readonly documentService = inject(DocumentService);
+  private readonly router = inject(Router);
 
   readonly user = this.authService.currentUser;
   readonly documents = signal<DocumentResponse[]>([]);
@@ -67,13 +68,20 @@ export class DashboardComponent implements OnInit {
     this.documentService.resumeProcessing(document.id).subscribe({
       next: () => {
         this.resumingDocumentId.set(null);
-        this.successMessage.set('Le traitement du document a été relancé.');
-        this.loadDocuments();
+        void this.router.navigate(['/documents/import'], {
+          state: { documentId: document.id, resumed: true },
+        });
       },
       error: error => {
         this.resumingDocumentId.set(null);
         this.errorMessage.set(error.error?.detail ?? 'Impossible de relancer le traitement du document.');
       },
+    });
+  }
+
+  continueDocument(document: DocumentResponse): void {
+    void this.router.navigate(['/documents/import'], {
+      state: { documentId: document.id },
     });
   }
 
