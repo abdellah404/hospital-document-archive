@@ -4,7 +4,7 @@
     <div>
 
     
-      <h1>
+      <h1 class="page-title">
         Archiver un document
       </h1>
 
@@ -74,7 +74,7 @@
 
     @if (message) {
 
-      <div class="success-message">
+      <div class="app-message app-message-success">
         {{ message }}
       </div>
 
@@ -83,7 +83,7 @@
 
     @if (errorMessage) {
 
-      <div class="error-message">
+      <div class="app-message app-message-error">
         {{ errorMessage }}
       </div>
 
@@ -92,7 +92,7 @@
 
     @if (processingMessage) {
 
-      <div class="processing-message">
+      <div class="app-message app-message-info processing-message">
 
         <span class="spinner"></span>
 
@@ -134,7 +134,7 @@
       currentStep === 'import' || currentStep === 'ocr' || currentStep === 'ai'
     ) {
 
-      <section class="workflow-card">
+      <section class="app-card workflow-card">
 
         <div class="card-icon">
           01
@@ -155,7 +155,7 @@
         </label>
 
 
-        <input
+        <input class="app-input"
           id="pdfFile"
           type="file"
           accept="application/pdf"
@@ -196,7 +196,7 @@
 
 
         <button
-          class="primary-button"
+          class="app-button app-button-primary"
           type="button"
           [disabled]="
             !selectedFile ||
@@ -227,7 +227,7 @@
     ) {
 
       <section
-        class="workflow-card centered-card"
+        class="app-card workflow-card centered-card"
       >
 
         <div class="card-icon">
@@ -272,7 +272,7 @@
     ) {
 
       <section
-        class="workflow-card centered-card"
+        class="app-card workflow-card centered-card"
       >
 
         <div class="card-icon gemini-icon">
@@ -327,7 +327,7 @@
     ) {
 
       <section
-        class="workflow-card review-card"
+        class="app-card workflow-card review-card"
       >
 
         <div class="card-icon">
@@ -370,7 +370,7 @@
               CNI *
             </label>
 
-            <input
+            <input class="app-input"
               id="cni"
               type="text"
               [(ngModel)]="
@@ -387,7 +387,7 @@
               Prénom *
             </label>
 
-            <input
+            <input class="app-input"
               id="firstName"
               type="text"
               [(ngModel)]="
@@ -404,7 +404,7 @@
               Nom *
             </label>
 
-            <input
+            <input class="app-input"
               id="lastName"
               type="text"
               [(ngModel)]="
@@ -421,7 +421,7 @@
               Numéro d'hospitalisation *
             </label>
 
-            <input
+            <input class="app-input"
               id="hospitalizationNumber"
               type="text"
               [(ngModel)]="
@@ -438,7 +438,7 @@
               Service *
             </label>
 
-            <select
+            <select class="app-select"
               id="service"
               [(ngModel)]="
                 extractedInformation.serviceId
@@ -477,7 +477,7 @@
               Date d'admission *
             </label>
 
-            <input
+            <input class="app-input"
               id="admissionDate"
               type="date"
               [(ngModel)]="
@@ -494,7 +494,7 @@
               Date de sortie
             </label>
 
-            <input
+            <input class="app-input"
               id="dischargeDate"
               type="date"
               [(ngModel)]="
@@ -516,7 +516,7 @@
           <div class="action-row">
 
             <button
-              class="primary-button"
+              class="app-button app-button-primary"
               type="button"
               (click)="openVerification()"
             >
@@ -554,7 +554,7 @@
           <div class="action-row">
 
             <button
-              class="secondary-button"
+              class="app-button app-button-secondary"
               type="button"
               (click)="correctInformation()"
             >
@@ -563,7 +563,7 @@
 
 
             <button
-              class="primary-button"
+              class="app-button app-button-primary"
               type="button"
               [disabled]="isProcessing"
               (click)="verifyAndArchive()"
@@ -595,7 +595,7 @@
     ) {
 
       <section
-        class="workflow-card centered-card archived-card"
+        class="app-card workflow-card centered-card archived-card"
       >
 
         <div class="archive-check">
@@ -698,7 +698,7 @@
 
 
         <button
-          class="primary-button"
+          class="app-button app-button-primary"
           type="button"
           (click)="resetWorkflow()"
         >

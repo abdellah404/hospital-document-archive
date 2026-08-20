@@ -1,14 +1,14 @@
-<div class="details-page">
-  <button type="button" class="back-button" (click)="goBack()">← Retour aux résultats</button>
+<div class="page-container">
+  <button type="button" class="table-action" (click)="goBack()">← Retour aux résultats</button>
   @if (document(); as item) {
   <header class="page-heading mt-10">
     <div>
-      <h1>{{ item.original_filename }}</h1>
+      <h1 class="page-title">{{ item.original_filename }}</h1>
     </div>
   </header>
   <div class="details-layout">
-    <section class="info-card">
-      <h2>Informations du document</h2>
+    <section class="app-card info-card">
+      <h2 class="section-title">Informations du document</h2>
       <div class="info-list">
         <div><span>Patient</span><strong>{{ item.patient.first_name }} {{ item.patient.last_name }}</strong></div>
         <div><span>CNI</span><strong>{{ item.patient.cni }}</strong></div>
@@ -20,14 +20,14 @@
         <div><span>Statut</span><strong>{{ item.status }}</strong></div>
       </div>
     </section>
-    <section class="preview-card">
-      <h2>Aperçu PDF</h2>@if (loading()) { <div class="preview-state">Chargement du PDF…</div> } @else if
-      (errorMessage()) { <div class="preview-state error-message">{{ errorMessage() }}</div> } @else if (previewUrl();
+    <section class="app-card preview-card">
+      <h2 class="section-title">Aperçu PDF</h2>@if (loading()) { <div class="preview-state">Chargement du PDF…</div> } @else if
+      (errorMessage()) { <div class="preview-state app-message-error">{{ errorMessage() }}</div> } @else if (previewUrl();
       as url) { <iframe [src]="url" title="Aperçu du document PDF"></iframe> }
     </section>
   </div>
-  } @else if (errorMessage()) { <section class="error-card">
-    <p class="error-message">{{ errorMessage() }}</p><button type="button" class="back-button" (click)="goBack()">Retour
+  } @else if (errorMessage()) { <section class="app-card error-card">
+    <p class="app-message app-message-error">{{ errorMessage() }}</p><button type="button" class="table-action" (click)="goBack()">Retour
       à la recherche</button>
   </section> }
 </div>

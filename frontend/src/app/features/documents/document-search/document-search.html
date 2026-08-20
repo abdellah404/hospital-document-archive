@@ -1,17 +1,17 @@
-<div class="search-page">
+<div class="page-container">
   <div class="page-heading mt-10">
     <div>
-      <h1>Rechercher des documents</h1>
+      <h1 class="page-title">Rechercher des documents</h1>
     </div>
   </div>
-  <section class="search-box"><mat-icon>search</mat-icon><input [(ngModel)]="query" (keyup.enter)="search()"
+  <section class="search-box"><mat-icon>search</mat-icon><input class="app-input" [(ngModel)]="query" (keyup.enter)="search()"
       type="search" placeholder="Nom du patient, CNI ou numéro d’hospitalisation"
-      aria-label="Rechercher des documents"><button class="search-button" type="button"
-      (click)="search()">Rechercher</button>@if (query) { <button class="clear-button" type="button"
+      aria-label="Rechercher des documents"><button class="app-button app-button-primary" type="button"
+      (click)="search()">Rechercher</button>@if (query) { <button class="app-button app-button-secondary" type="button"
       (click)="clear()">Effacer</button> }</section>
   <section class="filters" aria-label="Filtres de date">
-    <label>Filtrer par date
-      <select [(ngModel)]="dateMode" (ngModelChange)="onDateModeChange()">
+    <label class="app-label">Filtrer par date
+      <select class="app-select" [(ngModel)]="dateMode" (ngModelChange)="onDateModeChange()">
         <option value="all">Toutes les dates</option>
         <option value="date">Jour précis</option>
         <option value="month">Mois</option>
@@ -20,31 +20,31 @@
         <option value="last_months">Derniers mois</option>
       </select>
     </label>
-    @if (dateMode === 'date') { <label>Date <input [(ngModel)]="date" type="date" (keyup.enter)="search()"></label> }
-    @if (dateMode === 'month') { <label>Mois <input [(ngModel)]="month" type="month" (keyup.enter)="search()"></label> }
-    @if (dateMode === 'year') { <label>Année <input [(ngModel)]="year" type="number" min="2000" max="2100"
+    @if (dateMode === 'date') { <label class="app-label">Date <input class="app-input" [(ngModel)]="date" type="date" (keyup.enter)="search()"></label> }
+    @if (dateMode === 'month') { <label class="app-label">Mois <input class="app-input" [(ngModel)]="month" type="month" (keyup.enter)="search()"></label> }
+    @if (dateMode === 'year') { <label class="app-label">Année <input class="app-input" [(ngModel)]="year" type="number" min="2000" max="2100"
         placeholder="2026" (keyup.enter)="search()"></label> }
-    @if (dateMode === 'last_days') { <label>Nombre de jours <input [(ngModel)]="lastDays" type="number" min="1"
+    @if (dateMode === 'last_days') { <label class="app-label">Nombre de jours <input class="app-input" [(ngModel)]="lastDays" type="number" min="1"
         max="3650" placeholder="30" (keyup.enter)="search()"></label> }
-    @if (dateMode === 'last_months') { <label>Nombre de mois <input [(ngModel)]="lastMonths" type="number" min="1"
+    @if (dateMode === 'last_months') { <label class="app-label">Nombre de mois <input class="app-input" [(ngModel)]="lastMonths" type="number" min="1"
         max="120" placeholder="2" (keyup.enter)="search()"></label> }
-    @if (dateMode !== 'all') { <button class="filter-button" type="button" (click)="search()">Appliquer</button> }
+    @if (dateMode !== 'all') { <button class="app-button app-button-subtle" type="button" (click)="search()">Appliquer</button> }
   </section>
-  <section class="results-card">
+  <section class="app-card results-card">
     <div class="results-heading">
       <div>
-        <h2>Dossiers archivés</h2>
+        <h2 class="section-title">Dossiers archivés</h2>
         <p class="muted">{{ total() }} document{{ total() === 1 ? '' : 's' }} trouvé{{ total() === 1 ? '' : 's' }}</p>
       </div><span class="secure-label"><mat-icon>lock</mat-icon> Archives sécurisées</span>
     </div>
-    @if (errorMessage()) { <p class="error-message">{{ errorMessage() }}</p> }
+    @if (errorMessage()) { <p class="app-message app-message-error">{{ errorMessage() }}</p> }
     @if (loading()) { <div class="state">Recherche dans les archives…</div> }
-    @if (!loading() && !documents().length && !errorMessage()) { <div class="state">
+    @if (!loading() && !documents().length && !errorMessage()) { <div class="empty-state">
       <mat-icon>search_off</mat-icon><strong>Aucun document archivé trouvé</strong><span>Essayez un autre nom, une CNI
         ou un numéro d’hospitalisation.</span>
     </div> }
-    @if (!loading() && documents().length) { <div class="table-wrap">
-      <table>
+    @if (!loading() && documents().length) { <div class="app-table-wrap">
+      <table class="app-table">
         <thead>
           <tr>
             <th>Document</th>

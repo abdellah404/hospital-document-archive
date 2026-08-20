@@ -6,23 +6,23 @@
     <p class="intro">Connectez-vous à votre espace d’archives hospitalières.</p>
 
     <form [formGroup]="form" (ngSubmit)="submit()">
-      <label for="username">Nom d’utilisateur</label>
-      <input id="username" type="text" formControlName="username" autocomplete="username" placeholder="Votre nom d’utilisateur" />
+      <label class="app-label" for="username">Nom d’utilisateur</label>
+      <input class="app-input" id="username" type="text" formControlName="username" autocomplete="username" placeholder="Votre nom d’utilisateur" />
       @if (form.controls.username.touched && form.controls.username.invalid) {
         <span class="field-error">Le nom d’utilisateur est requis.</span>
       }
 
-      <label for="password">Mot de passe</label>
-      <input id="password" type="password" formControlName="password" autocomplete="current-password" placeholder="Votre mot de passe" />
+      <label class="app-label" for="password">Mot de passe</label>
+      <input class="app-input" id="password" type="password" formControlName="password" autocomplete="current-password" placeholder="Votre mot de passe" />
       @if (form.controls.password.touched && form.controls.password.invalid) {
         <span class="field-error">Le mot de passe est requis.</span>
       }
 
       @if (errorMessage) {
-        <p class="error-message" role="alert">{{ errorMessage }}</p>
+        <p class="app-message app-message-error" role="alert">{{ errorMessage }}</p>
       }
 
-      <button type="submit">Se connecter</button>
+      <button class="app-button login-button" type="submit">Se connecter</button>
     </form>
     <p class="login-note">Accès réservé au personnel autorisé.</p>
   </section>
