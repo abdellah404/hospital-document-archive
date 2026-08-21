@@ -40,4 +40,17 @@
   .section-heading { align-items: flex-start; }
   .modal-actions { flex-wrap: wrap; }
   .log-filters { grid-template-columns: 1fr; }
+  .logs-section .app-table-wrap { overflow: visible; }
+  .logs-section .app-table-wrap::after { display: none; }
+  .logs-section .app-table, .logs-section .app-table tbody { display: block; width: 100%; }
+  .logs-section .app-table thead { display: none; }
+  .logs-section .app-table tbody { display: grid; gap: 12px; }
+  .logs-section .app-table tr { display: block; border: 1px solid var(--border); border-radius: 10px; background: white; }
+  .logs-section .app-table td:not(.log-state) { display: grid; grid-template-columns: 88px minmax(0, 1fr); gap: 10px; border-bottom: 1px solid #edf1f6; padding: 10px 12px; overflow-wrap: anywhere; }
+  .logs-section .app-table td:not(.log-state)::before { color: #53657d; content: attr(data-label); font-size: 10px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
+  .logs-section .app-table tr td:last-child { border-bottom: 0; }
+  .logs-section .log-user { display: grid; align-items: start; }
+  .logs-section .log-user mat-icon { display: none; }
+  .logs-section .log-date small, .logs-section .log-context small { grid-column: 2; }
+  .logs-section .log-state { display: block; height: auto; padding: 32px 16px !important; }
 }

@@ -109,11 +109,11 @@
           } @else {
             @for (log of filteredLogs(); track log.id) {
               <tr>
-                <td class="log-date"><strong>{{ log.created_at | date:'dd/MM/yyyy' }}</strong><small>{{ log.created_at | date:'HH:mm' }}</small></td>
-                <td><span [class]="actionBadgeClass(log.action)">{{ actionLabel(log.action) }}</span></td>
-                <td class="log-user"><mat-icon>{{ log.username ? 'person' : 'settings' }}</mat-icon><span>{{ log.username ?? 'Système' }}</span></td>
-                <td class="log-context"><strong>{{ entityLabel(log.entity_type) }}</strong>@if (log.entity_id) { <small title="{{ log.entity_id }}">Réf. {{ shortId(log.entity_id) }}</small> }</td>
-                <td class="log-detail">{{ log.description || 'Aucun détail complémentaire.' }}</td>
+                <td class="log-date" data-label="Date"><strong>{{ log.created_at | date:'dd/MM/yyyy' }}</strong><small>{{ log.created_at | date:'HH:mm' }}</small></td>
+                <td data-label="Action"><span [class]="actionBadgeClass(log.action)">{{ actionLabel(log.action) }}</span></td>
+                <td class="log-user" data-label="Utilisateur"><mat-icon>{{ log.username ? 'person' : 'settings' }}</mat-icon><span>{{ log.username ?? 'Système' }}</span></td>
+                <td class="log-context" data-label="Contexte"><strong>{{ entityLabel(log.entity_type) }}</strong>@if (log.entity_id) { <small title="{{ log.entity_id }}">Réf. {{ shortId(log.entity_id) }}</small> }</td>
+                <td class="log-detail" data-label="Détails">{{ log.description || 'Aucun détail complémentaire.' }}</td>
               </tr>
             } @empty {
               <tr><td colspan="5" class="empty log-state">Aucune activité ne correspond aux filtres.</td></tr>
