@@ -135,5 +135,13 @@ export class DashboardComponent implements OnInit {
     );
   }
 
+  statusBadgeClass(status: string): string {
+    if (status === 'ARCHIVED') return 'app-badge app-badge-success';
+    if (status === 'READY_FOR_REVIEW') return 'app-badge app-badge-review';
+    if (status === 'OCR_PROCESSING' || status === 'AI_PROCESSING') return 'app-badge app-badge-processing';
+    if (status.endsWith('_ERROR')) return 'app-badge app-badge-error';
+    return 'app-badge app-badge-info';
+  }
+
   
 }

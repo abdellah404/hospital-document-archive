@@ -2,6 +2,7 @@
   <div class="page-heading mt-10">
     <div>
       <h1 class="page-title">Documents archivés</h1>
+      <p class="muted page-intro">Retrouvez rapidement un dossier patient vérifié.</p>
     </div>
   </div>
   <section class="search-box"><mat-icon>search</mat-icon><input class="app-input" [(ngModel)]="query" (keyup.enter)="search()"
@@ -37,8 +38,8 @@
         <p class="muted">{{ total() }} document{{ total() === 1 ? '' : 's' }} trouvé{{ total() === 1 ? '' : 's' }}</p>
       </div><span class="secure-label"><mat-icon>lock</mat-icon> Archives sécurisées</span>
     </div>
-    @if (errorMessage()) { <p class="app-message app-message-error">{{ errorMessage() }}</p> }
-    @if (loading()) { <div class="state">Recherche dans les archives…</div> }
+    @if (errorMessage()) { <p class="app-message app-message-error" role="alert">{{ errorMessage() }}</p> }
+    @if (loading()) { <div class="state" role="status">Recherche dans les archives…</div> }
     @if (!loading() && !documents().length && !errorMessage()) { <div class="empty-state">
       <mat-icon>search_off</mat-icon><strong>Aucun document archivé trouvé</strong><span>Essayez un autre nom, une CNI
         ou un numéro d’hospitalisation.</span>

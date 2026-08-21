@@ -7,22 +7,22 @@
 
     <form [formGroup]="form" (ngSubmit)="submit()">
       <label class="app-label" for="username">Nom d’utilisateur</label>
-      <input class="app-input" id="username" type="text" formControlName="username" autocomplete="username" placeholder="Votre nom d’utilisateur" />
+      <input class="app-input" id="username" type="text" formControlName="username" autocomplete="username" placeholder="Votre nom d’utilisateur" [attr.aria-invalid]="form.controls.username.touched && form.controls.username.invalid" aria-describedby="username-error" />
       @if (form.controls.username.touched && form.controls.username.invalid) {
-        <span class="field-error">Le nom d’utilisateur est requis.</span>
+        <span class="field-error" id="username-error">Le nom d’utilisateur est requis.</span>
       }
 
       <label class="app-label" for="password">Mot de passe</label>
-      <input class="app-input" id="password" type="password" formControlName="password" autocomplete="current-password" placeholder="Votre mot de passe" />
+      <input class="app-input" id="password" type="password" formControlName="password" autocomplete="current-password" placeholder="Votre mot de passe" [attr.aria-invalid]="form.controls.password.touched && form.controls.password.invalid" aria-describedby="password-error" />
       @if (form.controls.password.touched && form.controls.password.invalid) {
-        <span class="field-error">Le mot de passe est requis.</span>
+        <span class="field-error" id="password-error">Le mot de passe est requis.</span>
       }
 
       @if (errorMessage) {
         <p class="app-message app-message-error" role="alert">{{ errorMessage }}</p>
       }
 
-      <button class="app-button login-button" type="submit">Se connecter</button>
+      <button class="app-button login-button" type="submit" [disabled]="isSubmitting">{{ isSubmitting ? 'Connexion…' : 'Se connecter' }}</button>
     </form>
     <p class="login-note">Accès réservé au personnel autorisé.</p>
   </section>

@@ -48,11 +48,11 @@
     <header class="topbar">
       <div class="mobile-brand"><img src="logo-chp-png.png" alt="CHP" /><strong>CHP Archive</strong></div>
       <div class="topbar-actions">
-        <button mat-icon-button aria-label="Paramètres" matTooltip="Paramètres" [matMenuTriggerFor]="settingsMenu">
+        <button mat-icon-button aria-label="Ouvrir les préférences" [matMenuTriggerFor]="settingsMenu">
           <mat-icon>settings</mat-icon>
         </button>
         <span class="topbar-divider"></span>
-        <button class="profile-button" type="button" [matMenuTriggerFor]="profileMenu">
+        <button class="profile-button" type="button" aria-label="Ouvrir le menu du compte" [matMenuTriggerFor]="profileMenu">
           <span class="avatar">{{ (user()?.username ?? 'U').charAt(0).toUpperCase() }}</span>
           <span class="profile-copy"><strong>{{ user()?.username ?? 'Utilisateur' }}</strong><small>{{ user()?.role ===
               'ADMIN' ? 'Administrateur' : 'Archiviste' }}</small></span>

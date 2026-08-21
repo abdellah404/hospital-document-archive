@@ -8,6 +8,7 @@
   justify-content: space-between;
   gap: 20px;
 }
+.page-intro { margin: .45rem 0 0; font-size: .8125rem; }
 .stat-card {
   display: flex;
   min-height: 130px;
@@ -122,7 +123,9 @@
   }
   .section-heading {
     align-items: flex-start;
+    flex-direction: column;
   }
+  .section-actions { width: 100%; justify-content: space-between; }
   .section-heading > a {
     white-space: nowrap;
   }

@@ -5,6 +5,7 @@ import {
   Validators,
 } from '@angular/forms';
 import { Router } from '@angular/router';
+import { finalize } from 'rxjs';
 
 import { AuthService } from '../../../core/services/auth';
 
@@ -21,6 +22,7 @@ export class LoginComponent {
   private router = inject(Router);
 
   errorMessage = '';
+  isSubmitting = false;
 
   form = this.fb.nonNullable.group({
     username: ['', Validators.required],
@@ -34,9 +36,11 @@ export class LoginComponent {
     }
 
     this.errorMessage = '';
+    this.isSubmitting = true;
 
     this.authService
       .login(this.form.getRawValue())
+      .pipe(finalize(() => (this.isSubmitting = false)))
       .subscribe({
         next: () => {
           this.router.navigate(['/dashboard']);

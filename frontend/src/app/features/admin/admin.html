@@ -1,10 +1,10 @@
-<div class="page-container">
+<div class="page-container" [class.logs-page]="section() === 'logs'">
   <div class="page-heading mt-10">
     <div>
       <h1 class="page-title">Centre de gestion</h1>
     </div>
   </div>
-  @if (message()) { <p class="app-message app-message-success">{{ message() }}</p> } @if (error()) { <p class="app-message app-message-error">{{ error() }}</p> }
+  @if (message()) { <p class="app-message app-message-success" role="status">{{ message() }}</p> } @if (error()) { <p class="app-message app-message-error" role="alert">{{ error() }}</p> }
   @if (section() === 'users') {
   <section class="app-card content-section">
     <div class="section-heading">
@@ -36,11 +36,11 @@
         <tbody>@for (user of filteredUsers(); track user.id) {<tr>
             <td><strong>{{ user.username }}</strong></td>
             <td>{{ user.email }}</td>
-            <td><span class="app-badge app-badge-warning" [class.app-badge-success]="user.is_active">{{ user.is_active ? 'Actif' : 'Inactif'
+            <td><span class="app-badge" [class.app-badge-success]="user.is_active" [class.app-badge-neutral]="!user.is_active">{{ user.is_active ? 'Actif' : 'Inactif'
                 }}</span></td>
             <td><button class="table-action" (click)="toggleUser(user)">{{ user.is_active ? 'Désactiver' : 'Activer'
                 }}</button></td>
-          </tr>}</tbody>
+          </tr>} @empty { <tr><td colspan="4" class="empty">Aucun archiviste ne correspond aux filtres.</td></tr> }</tbody>
       </table>
     </div>
   </section>
@@ -70,20 +70,20 @@
         </thead>
         <tbody>@for (service of filteredServices(); track service.id) {<tr>
             <td><strong>{{ service.name }}</strong></td>
-            <td><span class="app-badge app-badge-warning" [class.app-badge-success]="service.is_active">{{ service.is_active ? 'Actif' :
+            <td><span class="app-badge" [class.app-badge-success]="service.is_active" [class.app-badge-neutral]="!service.is_active">{{ service.is_active ? 'Actif' :
                 'Inactif' }}</span></td>
             <td><button class="table-action" (click)="toggleService(service)">{{ service.is_active ? 'Désactiver' :
                 'Activer' }}</button></td>
-          </tr>}</tbody>
+          </tr>} @empty { <tr><td colspan="3" class="empty">Aucun service ne correspond au filtre.</td></tr> }</tbody>
       </table>
     </div>
   </section>
   }
-  @if (section() === 'logs') { <section class="app-card content-section">
+  @if (section() === 'logs') { <section class="app-card content-section logs-section">
     <div class="section-heading">
       <div>
         <h2 class="section-title">Journal d’activité</h2>
-        <p class="muted">Les actions sensibles réalisées dans l’application.</p>
+        <p class="muted">{{ filteredLogs().length }} événement{{ filteredLogs().length === 1 ? '' : 's' }} affiché{{ filteredLogs().length === 1 ? '' : 's' }} sur {{ logs().length }}.</p>
       </div><button class="refresh" (click)="loadAll()"><mat-icon>refresh</mat-icon> Actualiser</button>
     </div>
     <div class="list-filters log-filters"><label class="app-label">Rechercher<input class="app-input" [ngModel]="logQuery()"
@@ -101,21 +101,25 @@
     <div class="app-table-wrap">
       <table class="app-table">
         <thead>
-          <tr>
-            <th>Date</th>
-            <th>Utilisateur</th>
-            <th>Action</th>
-            <th>Détail</th>
-          </tr>
+          <tr><th>Date et heure</th><th>Action</th><th>Utilisateur</th><th>Contexte</th><th>Détails</th></tr>
         </thead>
-        <tbody>@for (log of filteredLogs(); track log.id) {<tr>
-            <td>{{ log.created_at | date:'dd/MM/yyyy HH:mm' }}</td>
-            <td>{{ log.username ?? 'Système' }}</td>
-            <td><span class="app-badge app-badge-warning">{{ actionLabel(log.action) }}</span></td>
-            <td>{{ log.description }}</td>
-          </tr>} @empty {<tr>
-            <td colspan="4" class="empty">Aucune activité enregistrée.</td>
-          </tr>}</tbody>
+        <tbody>
+          @if (loading()) {
+            <tr><td colspan="5" class="empty log-state" role="status">Chargement du journal d’activité…</td></tr>
+          } @else {
+            @for (log of filteredLogs(); track log.id) {
+              <tr>
+                <td class="log-date"><strong>{{ log.created_at | date:'dd/MM/yyyy' }}</strong><small>{{ log.created_at | date:'HH:mm' }}</small></td>
+                <td><span [class]="actionBadgeClass(log.action)">{{ actionLabel(log.action) }}</span></td>
+                <td class="log-user"><mat-icon>{{ log.username ? 'person' : 'settings' }}</mat-icon><span>{{ log.username ?? 'Système' }}</span></td>
+                <td class="log-context"><strong>{{ entityLabel(log.entity_type) }}</strong>@if (log.entity_id) { <small title="{{ log.entity_id }}">Réf. {{ shortId(log.entity_id) }}</small> }</td>
+                <td class="log-detail">{{ log.description || 'Aucun détail complémentaire.' }}</td>
+              </tr>
+            } @empty {
+              <tr><td colspan="5" class="empty log-state">Aucune activité ne correspond aux filtres.</td></tr>
+            }
+          }
+        </tbody>
       </table>
     </div>
   </section> }
@@ -156,7 +160,7 @@
         (click)="closeServiceModal()"><mat-icon>close</mat-icon></button>
     </div>
     <form class="modal-form" [formGroup]="serviceForm" (ngSubmit)="createService()">
-      <label class="app-label">Nom du service<input class="app-input" formControlName="name" placeholder="ex. Cardiologie">
+      <label class="app-label">Nom du service<input class="app-input" formControlName="name" placeholder="ex. Cardiologie" autocomplete="organization">
       </label>
       <div class="modal-actions"><button class="app-button app-button-secondary" type="button"
           (click)="closeServiceModal()">Annuler</button><button class="app-button app-button-primary"

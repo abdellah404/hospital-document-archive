@@ -8,7 +8,7 @@
 .login-card form { display: grid; gap: 8px; text-align: left; }
 .login-card .app-label { margin-top: 10px; }
 .field-error { color: #b33842; font-size: 11px; }
-.login-button { margin-top: 18px; border: 0; background: var(--brand-navy); color: white; }
+.login-button { width: 100%; margin-top: 18px; border: 0; background: var(--brand-navy); color: white; }
 .login-button:hover { background: var(--brand-navy-light); }
 .login-note { margin: 24px 0 0; color: #9aa7b7; font-size: 11px; }
 

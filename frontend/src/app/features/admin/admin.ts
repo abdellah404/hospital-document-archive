@@ -172,8 +172,30 @@ export class AdminComponent implements OnInit {
           SERVICE_CREATED: 'Service créé',
           SERVICE_STATUS_CHANGED: 'Statut service modifié',
         } as Record<string, string>
-      )[action] ?? action
+      )[action] ?? 'Action système'
     );
+  }
+
+  actionBadgeClass(action: string): string {
+    if (action === 'DOCUMENT_ARCHIVED' || action.endsWith('_CREATED')) return 'app-badge app-badge-success';
+    if (action === 'DOCUMENT_PROCESSING_RESUMED') return 'app-badge app-badge-processing';
+    if (action.endsWith('_STATUS_CHANGED')) return 'app-badge app-badge-warning';
+    if (action.endsWith('_UPDATED')) return 'app-badge app-badge-info';
+    return 'app-badge app-badge-neutral';
+  }
+
+  entityLabel(entityType: string): string {
+    return ({
+      DOCUMENT: 'Document',
+      USER: 'Utilisateur',
+      SERVICE: 'Service',
+      HOSPITALIZATION: 'Hospitalisation',
+      PATIENT: 'Patient',
+    } as Record<string, string>)[entityType.toUpperCase()] ?? 'Élément système';
+  }
+
+  shortId(id: string | null): string {
+    return id ? id.slice(0, 8) : '';
   }
   private flash(text: string): void {
     this.message.set(text);

@@ -25,8 +25,8 @@
   </section>
 
   <section class="app-card document-list-card">
-    @if (errorMessage()) { <p class="app-message app-message-error">{{ errorMessage() }}</p> }
-    @if (loading()) { <div class="list-state">Chargement des documents…</div> }
+    @if (errorMessage()) { <p class="app-message app-message-error" role="alert">{{ errorMessage() }}</p> }
+    @if (loading()) { <div class="list-state" role="status">Chargement des documents…</div> }
     @if (!loading() && !filteredDocuments().length && !errorMessage()) {
       <div class="empty-state"><mat-icon>folder_open</mat-icon><strong>Aucun document trouvé</strong><span>Modifiez la recherche ou le filtre de statut.</span></div>
     }
@@ -38,8 +38,7 @@
             @for (document of filteredDocuments(); track document.id) {
               <tr>
                 <td><div class="document-name"><mat-icon>picture_as_pdf</mat-icon><span>{{ document.original_filename }}</span></div></td>
-                <td><span class="app-badge" [class.app-badge-success]="document.status === 'ARCHIVED'"
-                  [class.app-badge-warning]="document.status !== 'ARCHIVED'">{{ statusLabel(document.status) }}</span></td>
+                <td><span [class]="statusBadgeClass(document.status)">{{ statusLabel(document.status) }}</span></td>
                 <td>{{ document.created_at | date:'d MMM y, HH:mm' }}</td>
                 <td><div class="row-actions">
                   @if (document.status === 'ARCHIVED') {

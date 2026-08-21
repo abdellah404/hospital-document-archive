@@ -1,5 +1,5 @@
 <div class="page-container">
-  <button type="button" class="table-action" (click)="goBack()">← Retour aux documents</button>
+  <button type="button" class="table-action" (click)="goBack()"><mat-icon>arrow_back</mat-icon> Retour aux documents</button>
 
   @if (document(); as item) {
     <header class="page-heading mt-10">
@@ -12,7 +12,7 @@
     </header>
 
     @if (successMessage()) {
-      <p class="app-message app-message-success">{{ successMessage() }}</p>
+      <p class="app-message app-message-success" role="status">{{ successMessage() }}</p>
     }
 
     <div class="details-layout" [class.editing]="editing()">
@@ -47,7 +47,7 @@
             <label class="app-label">Date d’admission *<input class="app-input" type="date" formControlName="admission_date"></label>
             <label class="app-label">Date de sortie<input class="app-input" type="date" formControlName="discharge_date"></label>
 
-            @if (editError()) { <p class="app-message app-message-error form-message">{{ editError() }}</p> }
+            @if (editError()) { <p class="app-message app-message-error form-message" role="alert">{{ editError() }}</p> }
 
             @if (confirming()) {
               <div class="confirmation-panel">
@@ -73,7 +73,7 @@
         @if (loading()) {
           <div class="preview-state">Chargement du PDF…</div>
         } @else if (errorMessage()) {
-          <div class="preview-state app-message-error">{{ errorMessage() }}</div>
+          <div class="preview-state app-message-error" role="alert">{{ errorMessage() }}</div>
         } @else if (previewUrl(); as url) {
           <iframe [src]="url" title="Aperçu du document PDF"></iframe>
         }

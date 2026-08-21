@@ -2,7 +2,7 @@
   display: block;
 }
 .workflow-container {
-  width: min(1100px, calc(100% - 32px));
+  width: 100%;
   margin: 0 auto;
   padding: 30px 0 60px;
 }
@@ -244,7 +244,7 @@ input[type='file'] {
 .progress-fill {
   height: 100%;
   border-radius: inherit;
-  background: linear-gradient(90deg, #2563eb, #60a5fa);
+  background: #2563eb;
   transition: width 0.35s ease;
 }
 .background-progress small {

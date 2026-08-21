@@ -1,4 +1,5 @@
 :host { display: block; }
+.logs-page { max-width: none; }
 .content-section { margin-block: 18px; }
 .section-heading { display: flex; align-items: center; justify-content: space-between; gap: 20px; margin-bottom: 20px; }
 .section-heading .muted { margin: 4px 0 0; font-size: 12px; }
@@ -6,7 +7,25 @@
 .list-filters .app-input, .list-filters .app-select { min-width: 190px; }
 .refresh { display: flex; align-items: center; gap: 5px; border: 0; background: none; color: #3478dd; font-size: 12px; font-weight: 700; cursor: pointer; }
 .refresh mat-icon { font-size: 17px; }
-.empty { text-align: center; color: #8795a7; }
+.empty { padding-block: 28px !important; text-align: center; color: #68798d !important; }
+.logs-section { padding: 20px; }
+.logs-section .section-heading { margin-bottom: 14px; }
+.log-filters { display: grid; grid-template-columns: minmax(260px, 1fr) minmax(220px, 320px); margin-bottom: 14px; }
+.log-filters .app-input, .log-filters .app-select { width: 100%; min-width: 0; }
+.logs-section .app-table { table-layout: fixed; }
+.logs-section .app-table th:nth-child(1) { width: 112px; }
+.logs-section .app-table th:nth-child(2) { width: 190px; }
+.logs-section .app-table th:nth-child(3) { width: 150px; }
+.logs-section .app-table th:nth-child(4) { width: 155px; }
+.logs-section .app-table th, .logs-section .app-table td { padding-block: 10px; }
+.log-date strong, .log-date small, .log-context strong, .log-context small { display: block; }
+.log-date strong { color: #334155; font-size: 12px; font-weight: 700; }
+.log-date small, .log-context small { margin-top: 1px; color: #718096; font-size: 11px; }
+.log-user { display: flex; align-items: center; gap: 6px; color: #334155 !important; font-weight: 600; }
+.log-user mat-icon { width: 17px; height: 17px; color: #718096; font-size: 17px; }
+.log-context strong { color: #334155; font-size: 12px; }
+.log-detail { line-height: 1.4; overflow-wrap: anywhere; }
+.log-state { height: 180px; }
 .modal-backdrop { position: fixed; inset: 0; z-index: 1000; display: grid; place-items: center; background: rgb(15 23 42 / .4); padding: 20px; }
 .small-modal { max-width: 430px; }
 .modal-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
@@ -20,4 +39,5 @@
   .app-card { padding: 16px; }
   .section-heading { align-items: flex-start; }
   .modal-actions { flex-wrap: wrap; }
+  .log-filters { grid-template-columns: 1fr; }
 }
