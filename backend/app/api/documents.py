@@ -50,6 +50,7 @@ from app.models.service import Service
 from app.models.user import User
 
 from app.schemas.document import (
+    ArchivedDocumentResponse,
     DocumentResponse,
 )
 
@@ -711,6 +712,64 @@ def search_archived_documents(
             "page_size": page_size,
             "total": total,
             "total_pages": total_pages,
+        },
+    }
+
+
+# ============================================================
+# ARCHIVED DOCUMENT DETAILS
+# ============================================================
+
+@router.get(
+    "/{document_id}",
+    response_model=ArchivedDocumentResponse,
+)
+def get_archived_document(
+    document_id: uuid.UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    document = db.get(Document, document_id)
+
+    if document is None:
+        raise HTTPException(status_code=404, detail="Document not found")
+
+    if document.status != "ARCHIVED":
+        raise HTTPException(status_code=400, detail="Document is not archived")
+
+    row = db.execute(
+        select(Hospitalization, Patient, Service)
+        .join(Patient, Hospitalization.patient_id == Patient.id)
+        .join(Service, Hospitalization.service_id == Service.id)
+        .where(Hospitalization.id == document.hospitalization_id)
+    ).one_or_none()
+
+    if row is None:
+        raise HTTPException(status_code=404, detail="Archived document data not found")
+
+    hospitalization, patient, service = row
+    return {
+        "id": document.id,
+        "original_filename": document.original_filename,
+        "status": document.status,
+        "created_at": document.created_at,
+        "archived_at": document.archived_at,
+        "patient": {
+            "id": patient.id,
+            "cni": patient.cni,
+            "first_name": patient.first_name,
+            "last_name": patient.last_name,
+        },
+        "hospitalization": {
+            "id": hospitalization.id,
+            "number": hospitalization.hospitalization_number,
+            "admission_date": hospitalization.admission_date,
+            "discharge_date": hospitalization.discharge_date,
+        },
+        "service": {
+            "id": service.id,
+            "name": service.name,
+            "is_active": service.is_active,
         },
     }
 

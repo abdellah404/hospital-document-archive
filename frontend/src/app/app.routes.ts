@@ -32,6 +32,12 @@ export const routes: Routes = [
           .then(m => m.DocumentSearchComponent),
       },
       {
+        path: 'documents',
+        pathMatch: 'full',
+        loadComponent: () => import('./features/documents/document-list/document-list')
+          .then(m => m.DocumentListComponent),
+      },
+      {
         path: 'documents/:documentId',
         loadComponent: () => import('./features/documents/document-details/document-details')
           .then(m => m.DocumentDetailsComponent),

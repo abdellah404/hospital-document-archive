@@ -1,0 +1,14 @@
+:host { display: block; }
+.page-heading .muted { margin: .5rem 0 0; font-size: .8125rem; }
+.list-controls { display: flex; align-items: end; gap: 1rem; margin: 1.75rem 0 1rem; }
+.search-control { position: relative; flex: 1; }
+.search-control mat-icon { position: absolute; top: .7rem; left: .75rem; color: #7d91aa; font-size: 1.25rem; }
+.search-control .app-input { padding-left: 2.5rem; }
+.filter-control { display: flex; min-width: 200px; flex-direction: column; gap: .4375rem; color: #53657d; font-size: .75rem; font-weight: 700; }
+.document-list-card { padding: 1rem 1.5rem; }
+.document-name { display: flex; min-width: 190px; align-items: center; gap: .5625rem; color: #263b59; font-weight: 600; }
+.document-name mat-icon { color: #ee5b63; font-size: 1.25rem; }
+.row-actions { display: flex; min-width: 140px; flex-wrap: wrap; gap: .75rem; }
+.table-action:disabled { cursor: wait; opacity: .55; }
+.list-state { display: grid; min-height: 220px; place-items: center; color: #8290a3; }
+@media (max-width: 650px) { .list-controls { align-items: stretch; flex-direction: column; } .filter-control { min-width: 0; } .document-list-card { padding: 1rem; } }

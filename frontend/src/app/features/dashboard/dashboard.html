@@ -37,7 +37,7 @@
             <option value="archived">Archivés</option>
             <option value="processing">En cours</option>
             <option value="errors">En erreur</option>
-          </select></label><a routerLink="/documents/search">Voir tout <mat-icon>arrow_forward</mat-icon></a></div>
+      </select></label><a routerLink="/documents">Voir tout <mat-icon>arrow_forward</mat-icon></a></div>
     </div>
     @if (successMessage()) { <p class="app-message app-message-success">{{ successMessage() }}</p> }
     @if (errorMessage()) { <p class="app-message app-message-error">{{ errorMessage() }}</p> }
@@ -73,13 +73,13 @@
                 @if (user()?.role === 'ADMIN' && canResume(document.status)) {
                 <button class="table-action" type="button" [disabled]="resumingDocumentId() === document.id"
                   (click)="resumeDocument(document)"><mat-icon>restart_alt</mat-icon>{{ resumingDocumentId() ===
-                  document.id ? 'Relance…' : 'Reprendre' }}</button>
+                  document.id ? 'Relance en cours…' : 'Relancer le traitement' }}</button>
                 }
                 @if (document.status === 'READY_FOR_REVIEW') {
                 <button class="table-action" type="button"
-                  (click)="continueDocument(document)"><mat-icon>restart_alt</mat-icon>Reprendre</button>
+                  (click)="continueDocument(document)"><mat-icon>fact_check</mat-icon>Continuer la vérification</button>
                 }
-                @if (document.status === 'ARCHIVED') { <a class="table-action" routerLink="/documents/search">Détails
+                @if (document.status === 'ARCHIVED') { <a class="table-action" [routerLink]="['/documents', document.id]">Détails
                   <mat-icon>chevron_right</mat-icon></a> }
               </div>
             </td>

@@ -51,23 +51,39 @@ export class DocumentDetailsComponent implements OnDestroy, OnInit {
   });
 
   ngOnInit(): void {
-    const document = history.state?.document as ArchivedDocument | undefined;
-    if (!document || document.id !== this.route.snapshot.paramMap.get('documentId')) {
+    const documentId = this.route.snapshot.paramMap.get('documentId');
+    if (!documentId) {
       this.loading.set(false);
-      this.errorMessage.set('Les informations de ce document ne sont plus disponibles. Revenez à la recherche et sélectionnez le document à nouveau.');
+      this.errorMessage.set('Document introuvable.');
       return;
     }
 
-    this.document.set(document);
-    this.documentService.getFile(document.id).subscribe({
+    this.documentService.getDocument(documentId).subscribe({
+      next: document => {
+        this.document.set(document);
+        this.loadFile(document.id);
+      },
+      error: error => {
+        this.loading.set(false);
+        this.errorMessage.set(
+          error.status === 400
+            ? 'Les détails sont disponibles uniquement pour les documents archivés.'
+            : this.apiError(error),
+        );
+      },
+    });
+  }
+
+  private loadFile(documentId: string): void {
+    this.documentService.getFile(documentId).subscribe({
       next: (file) => {
         this.objectUrl = URL.createObjectURL(file);
         this.previewUrl.set(this.sanitizer.bypassSecurityTrustResourceUrl(this.objectUrl));
         this.loading.set(false);
       },
-      error: () => {
+      error: error => {
         this.loading.set(false);
-        this.errorMessage.set('Impossible de charger le PDF.');
+        this.setFileError(error);
       },
     });
   }
@@ -180,7 +196,7 @@ export class DocumentDetailsComponent implements OnDestroy, OnInit {
   }
 
   goBack(): void {
-    void this.router.navigate(['/documents/search']);
+    void this.router.navigate(['/documents']);
   }
 
   ngOnDestroy(): void {
@@ -192,5 +208,20 @@ export class DocumentDetailsComponent implements OnDestroy, OnInit {
     if (typeof detail === 'string') return detail;
     if (Array.isArray(detail)) return detail.map(item => item.msg).filter(Boolean).join(' ') || 'Une erreur est survenue.';
     return 'Une erreur est survenue.';
+  }
+
+  private setFileError(error: { error?: Blob }): void {
+    const fallback = 'Impossible de charger le PDF.';
+    if (!(error.error instanceof Blob)) {
+      this.errorMessage.set(fallback);
+      return;
+    }
+    error.error.text().then(text => {
+      try {
+        this.errorMessage.set(JSON.parse(text).detail ?? fallback);
+      } catch {
+        this.errorMessage.set(fallback);
+      }
+    });
   }
 }

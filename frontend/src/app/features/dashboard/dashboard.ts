@@ -122,11 +122,11 @@ export class DashboardComponent implements OnInit {
       (
         {
           IMPORTED: 'Importé',
-          OCR_PROCESSING: 'Analyse du document',
-          AI_PROCESSING: 'Extraction des informations',
+          OCR_PROCESSING: 'Analyse en cours',
+          AI_PROCESSING: 'Extraction en cours',
           READY_FOR_REVIEW: 'À vérifier',
           ARCHIVED: 'Archivé',
-          OCR_ERROR: 'Erreur d’analyse',
+          OCR_ERROR: 'Erreur OCR',
           AI_ERROR: 'Erreur d’extraction',
           PROCESSING_ERROR: 'Erreur de traitement',
           ARCHIVE_ERROR: 'Erreur d’archivage',

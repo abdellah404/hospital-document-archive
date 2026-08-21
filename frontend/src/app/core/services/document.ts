@@ -210,6 +210,10 @@ export class DocumentService {
     return this.http.get<ArchivedDocumentResponse>(`${this.apiUrl}/documents/archived`, { params });
   }
 
+  getDocument(documentId: string): Observable<ArchivedDocument> {
+    return this.http.get<ArchivedDocument>(`${this.apiUrl}/documents/${documentId}`);
+  }
+
 
   getStatus(
     documentId: string,

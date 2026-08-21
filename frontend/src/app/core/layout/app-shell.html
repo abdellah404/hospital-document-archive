@@ -17,8 +17,12 @@
       <a class="sidebar-link" routerLink="/documents/import" routerLinkActive="active">
         <mat-icon>upload_file</mat-icon><span>Importer un document</span>
       </a>
+      <a class="sidebar-link" routerLink="/documents" routerLinkActive="active"
+        [routerLinkActiveOptions]="{ exact: true }">
+        <mat-icon>description</mat-icon><span>Tous les documents</span>
+      </a>
       <a class="sidebar-link" routerLink="/documents/search" routerLinkActive="active">
-        <mat-icon>search</mat-icon><span>Rechercher des documents</span>
+        <mat-icon>inventory_2</mat-icon><span>Documents archivés</span>
       </a>
       @if (user()?.role === 'ADMIN') {
       <p class="nav-label admin-label">Administration</p>

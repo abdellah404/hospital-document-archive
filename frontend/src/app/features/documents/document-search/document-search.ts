@@ -60,7 +60,7 @@ export class DocumentSearchComponent implements OnInit {
   }
 
   openDetails(document: ArchivedDocument): void {
-    this.router.navigate(['/documents', document.id], { state: { document } });
+    this.router.navigate(['/documents', document.id]);
   }
 
   clear(): void { this.query = ''; this.search(); }

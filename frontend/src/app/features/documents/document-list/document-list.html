@@ -1,0 +1,63 @@
+<div class="page-container">
+  <div class="page-heading mt-10">
+    <div>
+      <h1 class="page-title">Tous les documents</h1>
+      <p class="muted">Suivez les documents importés et leur état de traitement.</p>
+    </div>
+  </div>
+
+  <section class="list-controls" aria-label="Recherche et filtres">
+    <label class="search-control">
+      <mat-icon>search</mat-icon>
+      <input class="app-input" type="search" placeholder="Rechercher par nom…" aria-label="Rechercher par nom"
+        [ngModel]="query()" (ngModelChange)="query.set($event)">
+    </label>
+    <label class="filter-control">Statut
+      <select class="app-select" [ngModel]="statusFilter()" (ngModelChange)="statusFilter.set($event)">
+        <option value="all">Tous</option>
+        <option value="imported">Importés</option>
+        <option value="processing">En traitement</option>
+        <option value="review">À vérifier</option>
+        <option value="archived">Archivés</option>
+        <option value="errors">En erreur</option>
+      </select>
+    </label>
+  </section>
+
+  <section class="app-card document-list-card">
+    @if (errorMessage()) { <p class="app-message app-message-error">{{ errorMessage() }}</p> }
+    @if (loading()) { <div class="list-state">Chargement des documents…</div> }
+    @if (!loading() && !filteredDocuments().length && !errorMessage()) {
+      <div class="empty-state"><mat-icon>folder_open</mat-icon><strong>Aucun document trouvé</strong><span>Modifiez la recherche ou le filtre de statut.</span></div>
+    }
+    @if (!loading() && filteredDocuments().length) {
+      <div class="app-table-wrap">
+        <table class="app-table">
+          <thead><tr><th>Document</th><th>Statut</th><th>Date d’import</th><th>Actions</th></tr></thead>
+          <tbody>
+            @for (document of filteredDocuments(); track document.id) {
+              <tr>
+                <td><div class="document-name"><mat-icon>picture_as_pdf</mat-icon><span>{{ document.original_filename }}</span></div></td>
+                <td><span class="app-badge" [class.app-badge-success]="document.status === 'ARCHIVED'"
+                  [class.app-badge-warning]="document.status !== 'ARCHIVED'">{{ statusLabel(document.status) }}</span></td>
+                <td>{{ document.created_at | date:'d MMM y, HH:mm' }}</td>
+                <td><div class="row-actions">
+                  @if (document.status === 'ARCHIVED') {
+                    <a class="table-action" [routerLink]="['/documents', document.id]"><mat-icon>info</mat-icon>Détails</a>
+                  }
+                  @if (document.status === 'READY_FOR_REVIEW') {
+                    <button class="table-action" type="button" (click)="continueReview(document)"><mat-icon>fact_check</mat-icon>Continuer la vérification</button>
+                  }
+                  @if (user()?.role === 'ADMIN' && canResume(document.status)) {
+                    <button class="table-action" type="button" [disabled]="resumingDocumentId() === document.id"
+                      (click)="resumeProcessing(document)"><mat-icon>restart_alt</mat-icon>{{ resumingDocumentId() === document.id ? 'Relance en cours…' : 'Relancer le traitement' }}</button>
+                  }
+                </div></td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </section>
+</div>

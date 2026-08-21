@@ -1,5 +1,5 @@
 <div class="page-container">
-  <button type="button" class="table-action" (click)="goBack()">← Retour aux résultats</button>
+  <button type="button" class="table-action" (click)="goBack()">← Retour aux documents</button>
 
   @if (document(); as item) {
     <header class="page-heading mt-10">
@@ -82,7 +82,7 @@
   } @else if (errorMessage()) {
     <section class="app-card error-card">
       <p class="app-message app-message-error">{{ errorMessage() }}</p>
-      <button type="button" class="table-action" (click)="goBack()">Retour à la recherche</button>
+      <button type="button" class="table-action" (click)="goBack()">Retour aux documents</button>
     </section>
   }
 </div>
