@@ -85,8 +85,8 @@ def register(
     entity_type="USER",
     entity_id=user.id,
     description=(
-        f"Admin '{current_admin.username}' "
-        f"created archivist '{user.username}'."
+        f"L'administrateur '{current_admin.username}' "
+        f"a créé l'archiviste '{user.username}'."
     ),
     details={
         "username": user.username,
@@ -238,12 +238,10 @@ def update_user_status(
     entity_type="USER",
     entity_id=user.id,
     description=(
-        f"Admin '{current_admin.username}' "
-        f"changed user '{user.username}' "
-        f"status from "
-        f"{'active' if old_status else 'inactive'} "
-        f"to "
-        f"{'active' if is_active else 'inactive'}."
+        f"L'administrateur '{current_admin.username}' "
+        f"a modifié le statut de l'archiviste '{user.username}' "
+        f"de {'actif' if old_status else 'inactif'} "
+        f"à {'actif' if is_active else 'inactif'}."
     ),
     details={
         "username": user.username,

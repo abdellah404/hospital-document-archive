@@ -1303,8 +1303,8 @@ def verify_document(
     entity_type="DOCUMENT",
     entity_id=document.id,
     description=(
-        f"Archivist '{current_user.username}' "
-        f"archived document "
+        f"L'archiviste '{current_user.username}' "
+        f"a archivé le document "
         f"'{document.original_filename}'."
     ),
     details={
@@ -1797,9 +1797,9 @@ def update_archived_document(
             entity_type="DOCUMENT",
             entity_id=document.id,
             description=(
-                f"Admin "
+                f"L'administrateur "
                 f"'{current_admin.username}' "
-                f"modified archived document "
+                f"a modifié le document archivé "
                 f"'{document.original_filename}'."
             ),
             details={
@@ -1964,11 +1964,11 @@ def resume_document_processing(
             entity_type="DOCUMENT",
             entity_id=document.id,
             description=(
-                f"Admin "
+                f"L'administrateur "
                 f"'{current_admin.username}' "
-                f"resumed processing of document "
+                f"a repris le traitement du document "
                 f"'{document.original_filename}' "
-                f"from status '{current_status}'."
+                f"depuis le statut '{current_status}'."
             ),
             details={
                 "filename": (

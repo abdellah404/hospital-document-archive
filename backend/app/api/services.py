@@ -72,8 +72,8 @@ def create_service(
     entity_type="SERVICE",
     entity_id=service.id,
     description=(
-        f"Admin '{current_admin.username}' "
-        f"created service '{service.name}'."
+        f"L'administrateur '{current_admin.username}' "
+        f"a créé le service '{service.name}'."
     ),
     details={
         "service_name": service.name,
@@ -134,12 +134,10 @@ def update_service_status(
     entity_type="SERVICE",
     entity_id=service.id,
     description=(
-        f"Admin '{current_admin.username}' "
-        f"changed service '{service.name}' "
-        f"status from "
-        f"{'active' if old_status else 'inactive'} "
-        f"to "
-        f"{'active' if is_active else 'inactive'}."
+        f"L'administrateur '{current_admin.username}' "
+        f"a modifié le statut du service '{service.name}' "
+        f"de {'actif' if old_status else 'inactif'} "
+        f"à {'actif' if is_active else 'inactif'}."
     ),
     details={
         "service_name": service.name,
