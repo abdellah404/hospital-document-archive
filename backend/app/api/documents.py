@@ -322,7 +322,7 @@ def search_archived_documents(
         le=100,
     ),
     db: Session = Depends(get_db),
-    #current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user),
 ):
     # --------------------------------------------------------
     # Only one date mode at a time

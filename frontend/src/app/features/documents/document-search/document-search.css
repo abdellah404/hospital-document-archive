@@ -15,6 +15,8 @@
 .app-table td small { margin-top: 3px; color: #91a0b3; font-size: 10px; }
 .state { display: grid; min-height: 220px; place-items: center; color: #8290a3; }
 .row-actions { display: flex; min-width: 40px; justify-content: center; gap: 8px; }
+.download-action { color: var(--brand-green); }
+.download-action:hover { background: #eaf7f0; color: #126443; }
 
 @media (max-width: 600px) {
   .search-box { flex-wrap: wrap; }

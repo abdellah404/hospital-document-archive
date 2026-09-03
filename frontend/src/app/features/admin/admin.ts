@@ -31,16 +31,24 @@ export class AdminComponent implements OnInit {
   readonly logQuery = signal('');
   readonly logAction = signal('all');
   readonly showUserModal = signal(false);
+  readonly showPasswordResetModal = signal(false);
   readonly showServiceModal = signal(false);
+  readonly selectedUser = signal<User | null>(null);
+  readonly passwordResetError = signal('');
+  readonly passwordResetSubmitting = signal(false);
   readonly loading = signal(true);
   readonly message = signal('');
   readonly error = signal('');
   readonly userForm = this.fb.nonNullable.group({
     username: ['', [Validators.required, Validators.minLength(3)]],
     email: ['', [Validators.required, Validators.email]],
-    password: ['', [Validators.required, Validators.minLength(8)]],
+    password: ['', [Validators.required, Validators.minLength(8), Validators.maxLength(128)]],
   });
   readonly serviceForm = this.fb.nonNullable.group({ name: ['', Validators.required] });
+  readonly passwordResetForm = this.fb.nonNullable.group({
+    newPassword: ['', [Validators.required, Validators.minLength(8), Validators.maxLength(128)]],
+    confirmPassword: ['', [Validators.required]],
+  });
   readonly filteredUsers = computed(() => {
     const query = this.userQuery().trim().toLowerCase();
     return this.users().filter((user) =>
@@ -80,6 +88,18 @@ export class AdminComponent implements OnInit {
   closeUserModal(): void {
     this.showUserModal.set(false);
     this.userForm.reset();
+  }
+  openPasswordResetModal(user: User): void {
+    this.selectedUser.set(user);
+    this.passwordResetForm.reset();
+    this.passwordResetError.set('');
+    this.showPasswordResetModal.set(true);
+  }
+  closePasswordResetModal(): void {
+    this.showPasswordResetModal.set(false);
+    this.selectedUser.set(null);
+    this.passwordResetForm.reset();
+    this.passwordResetError.set('');
   }
   openServiceModal(): void {
     this.serviceForm.reset();
@@ -138,6 +158,42 @@ export class AdminComponent implements OnInit {
         error: (e) => this.error.set(this.apiError(e)),
       });
   }
+  resetPassword(): void {
+    const user = this.selectedUser();
+
+    if (!user || this.passwordResetForm.invalid) {
+      this.passwordResetForm.markAllAsTouched();
+      return;
+    }
+
+    const { newPassword, confirmPassword } = this.passwordResetForm.getRawValue();
+
+    if (newPassword !== confirmPassword) {
+      this.passwordResetError.set('Les mots de passe ne correspondent pas.');
+      return;
+    }
+
+    this.passwordResetError.set('');
+    this.passwordResetSubmitting.set(true);
+    this.admin.resetUserPassword(user.id, newPassword).subscribe({
+      next: (response) => {
+        this.users.update((users) =>
+          users.map((item) =>
+            item.id === response.user_id
+              ? { ...item, must_change_password: response.must_change_password }
+              : item
+          )
+        );
+        this.passwordResetSubmitting.set(false);
+        this.closePasswordResetModal();
+        this.flash(`Mot de passe de « ${user.username} » réinitialisé avec succès.`);
+      },
+      error: (e) => {
+        this.passwordResetSubmitting.set(false);
+        this.passwordResetError.set(this.apiError(e));
+      },
+    });
+  }
   createService(): void {
     if (this.serviceForm.invalid) {
       this.serviceForm.markAllAsTouched();
@@ -172,6 +228,8 @@ export class AdminComponent implements OnInit {
           DOCUMENT_RESTORED: 'Document restauré',
           USER_CREATED: 'Utilisateur créé',
           USER_STATUS_CHANGED: 'Statut utilisateur modifié',
+          USER_PASSWORD_RESET: 'Mot de passe réinitialisé',
+          USER_PASSWORD_CHANGED: 'Mot de passe modifié',
           SERVICE_CREATED: 'Service créé',
           SERVICE_STATUS_CHANGED: 'Statut service modifié',
         } as Record<string, string>
@@ -183,6 +241,8 @@ export class AdminComponent implements OnInit {
     if (action === 'DOCUMENT_ARCHIVED' || action === 'DOCUMENT_RESTORED' || action.endsWith('_CREATED')) return 'app-badge app-badge-success';
     if (action === 'DOCUMENT_DELETED') return 'app-badge app-badge-error';
     if (action === 'DOCUMENT_PROCESSING_RESUMED') return 'app-badge app-badge-processing';
+    if (action === 'USER_PASSWORD_RESET') return 'app-badge app-badge-warning';
+    if (action === 'USER_PASSWORD_CHANGED') return 'app-badge app-badge-info';
     if (action.endsWith('_STATUS_CHANGED')) return 'app-badge app-badge-warning';
     if (action.endsWith('_UPDATED')) return 'app-badge app-badge-info';
     return 'app-badge app-badge-neutral';

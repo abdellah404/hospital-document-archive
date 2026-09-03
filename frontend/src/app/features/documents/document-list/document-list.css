@@ -16,6 +16,8 @@
 .row-actions { display: flex; min-width: 0; justify-content: center; gap: .375rem; }
 .no-actions { color: #94a3b8; font-size: .75rem; }
 .table-action:disabled { cursor: wait; opacity: .55; }
+.download-action { color: var(--brand-green); }
+.download-action:hover { background: #eaf7f0; color: #126443; }
 .delete-action { color: var(--danger); }
 .delete-action:hover { background: #fff1f2; color: #8f1f2a; }
 .restore-action { color: var(--brand-green); }

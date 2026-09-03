@@ -26,6 +26,13 @@ import { catchError, throwError } from 'rxjs';
           void router.navigate(['/login']);
         }
 
+        if (
+          error.status === 403 &&
+          error.error?.detail === 'Password change required'
+        ) {
+          void router.navigate(['/change-password']);
+        }
+
         return throwError(() => error);
       })
     );

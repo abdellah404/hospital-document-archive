@@ -1,8 +1,14 @@
+import uuid
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
-from app.api.dependencies import get_current_user , get_current_admin
+from app.api.dependencies import (
+    get_authenticated_user,
+    get_current_admin,
+)
 
 from app.core.security import (
     create_access_token,
@@ -13,6 +19,10 @@ from app.db.session import get_db
 from app.models.role import Role
 from app.models.user import User
 from app.schemas.auth import (
+    AdminResetPasswordRequest,
+    AdminResetPasswordResponse,
+    ChangePasswordRequest,
+    ChangePasswordResponse,
     LoginRequest,
     RegisterRequest,
     TokenResponse,
@@ -25,8 +35,6 @@ router = APIRouter(
     prefix="/auth",
     tags=["Authentication"],
 )
-
-import uuid
 
 @router.post(
     "/register",
@@ -74,6 +82,8 @@ def register(
         password_hash=hash_password(data.password),
         role_id=archivist_role.id,
         is_active=True,
+        must_change_password=False,
+        token_version=0,
     )
 
     db.add(user)
@@ -104,6 +114,7 @@ def register(
         "email": user.email,
         "role": archivist_role.name,
         "is_active": user.is_active,
+        "must_change_password": user.must_change_password,
     }
 
 @router.post(
@@ -135,12 +146,14 @@ def login(
         )
 
     access_token = create_access_token(
-        subject=str(user.id)
+        subject=str(user.id),
+        token_version=user.token_version,
     )
 
     return {
         "access_token": access_token,
         "token_type": "bearer",
+        "must_change_password": user.must_change_password,
     }
 
 
@@ -149,7 +162,7 @@ def login(
     response_model=UserResponse,
 )
 def get_me(
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_authenticated_user),
     db: Session = Depends(get_db),
 ):
     role = db.get(Role, current_user.role_id)
@@ -160,6 +173,7 @@ def get_me(
         "email": current_user.email,
         "role": role.name if role else "UNKNOWN",
         "is_active": current_user.is_active,
+        "must_change_password": current_user.must_change_password,
     }
 
 
@@ -189,6 +203,7 @@ def get_users(
                 "email": user.email,
                 "role": role.name if role else "UNKNOWN",
                 "is_active": user.is_active,
+                "must_change_password": user.must_change_password,
             }
         )
 
@@ -261,4 +276,136 @@ def update_user_status(
         "email": user.email,
         "role": role.name,
         "is_active": user.is_active,
+        "must_change_password": user.must_change_password,
+    }
+
+
+@router.patch(
+    "/users/{user_id}/password",
+    response_model=AdminResetPasswordResponse,
+)
+def reset_user_password(
+    user_id: uuid.UUID,
+    data: AdminResetPasswordRequest,
+    db: Session = Depends(get_db),
+    current_admin: User = Depends(get_current_admin),
+):
+    user = db.get(User, user_id)
+
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found",
+        )
+
+    role = db.get(Role, user.role_id)
+
+    if not role or role.name != "ARCHIVIST":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Only archivists can be managed here",
+        )
+
+    try:
+        user.password_hash = hash_password(data.new_password)
+        user.must_change_password = True
+        user.token_version += 1
+
+        create_audit_log(
+            db,
+            user=current_admin,
+            action="USER_PASSWORD_RESET",
+            entity_type="USER",
+            entity_id=user.id,
+            description=(
+                f"L'administrateur '{current_admin.username}' "
+                f"a réinitialisé le mot de passe de l'archiviste "
+                f"'{user.username}'."
+            ),
+            details={
+                "username": user.username,
+                "forced_password_change": True,
+            },
+        )
+
+        db.commit()
+    except SQLAlchemyError:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Unable to reset password",
+        )
+
+    return {
+        "message": "Password reset successfully",
+        "user_id": str(user.id),
+        "must_change_password": user.must_change_password,
+    }
+
+
+@router.post(
+    "/change-password",
+    response_model=ChangePasswordResponse,
+)
+def change_password(
+    data: ChangePasswordRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_authenticated_user),
+):
+    if not verify_password(
+        data.current_password,
+        current_user.password_hash,
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Current password is incorrect",
+        )
+
+    if verify_password(
+        data.new_password,
+        current_user.password_hash,
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="New password must be different from current password",
+        )
+
+    try:
+        current_user.password_hash = hash_password(data.new_password)
+        current_user.must_change_password = False
+        current_user.token_version += 1
+
+        create_audit_log(
+            db,
+            user=current_user,
+            action="USER_PASSWORD_CHANGED",
+            entity_type="USER",
+            entity_id=current_user.id,
+            description=(
+                f"L'utilisateur '{current_user.username}' "
+                "a modifié son mot de passe."
+            ),
+            details={
+                "username": current_user.username,
+            },
+        )
+
+        db.commit()
+    except SQLAlchemyError:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Unable to change password",
+        )
+
+    access_token = create_access_token(
+        subject=str(current_user.id),
+        token_version=current_user.token_version,
+    )
+
+    return {
+        "message": "Password changed successfully",
+        "access_token": access_token,
+        "token_type": "bearer",
+        "must_change_password": current_user.must_change_password,
     }

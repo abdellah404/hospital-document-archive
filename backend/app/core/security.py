@@ -25,13 +25,17 @@ oauth2_scheme = OAuth2PasswordBearer(
     tokenUrl="/auth/login"
 )
 
-def create_access_token(subject: str) -> str:
+def create_access_token(
+    subject: str,
+    token_version: int,
+) -> str:
     expire = datetime.now(timezone.utc) + timedelta(
         minutes=settings.access_token_expire_minutes
     )
 
     payload = {
         "sub": subject,
+        "ver": token_version,
         "exp": expire,
     }
 

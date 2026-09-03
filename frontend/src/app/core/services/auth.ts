@@ -19,6 +19,16 @@ interface RegisterRequest {
 interface TokenResponse {
   access_token: string;
   token_type: string;
+  must_change_password: boolean;
+}
+
+interface ChangePasswordRequest {
+  current_password: string;
+  new_password: string;
+}
+
+interface ChangePasswordResponse extends TokenResponse {
+  message: string;
 }
 
 @Injectable({
@@ -39,13 +49,29 @@ export class AuthService {
       )
       .pipe(
         tap((response) => {
+          this.currentUser.set(null);
           localStorage.setItem(
             'access_token',
             response.access_token
           );
-          this.getCurrentUser().subscribe({ next: user => this.currentUser.set(user) });
         })
       );
+  }
+
+  changePassword(data: ChangePasswordRequest): Observable<ChangePasswordResponse> {
+    return this.http.post<ChangePasswordResponse>(
+      `${this.apiUrl}/auth/change-password`,
+      data
+    ).pipe(
+      tap((response) => {
+        localStorage.setItem('access_token', response.access_token);
+        this.currentUser.update((user) =>
+          user
+            ? { ...user, must_change_password: response.must_change_password }
+            : user
+        );
+      })
+    );
   }
 
   register(data: RegisterRequest): Observable<User> {

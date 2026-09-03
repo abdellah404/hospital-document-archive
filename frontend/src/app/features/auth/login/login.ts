@@ -42,8 +42,12 @@ export class LoginComponent {
       .login(this.form.getRawValue())
       .pipe(finalize(() => (this.isSubmitting = false)))
       .subscribe({
-        next: () => {
-          this.router.navigate(['/dashboard']);
+        next: (response) => {
+          this.router.navigate([
+            response.must_change_password
+              ? '/change-password'
+              : '/dashboard',
+          ]);
         },
         error: (error) => {
           this.errorMessage =

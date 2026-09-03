@@ -60,6 +60,14 @@
                   <td><span [class]="statusBadgeClass(document.status)">{{ statusLabel(document.status) }}</span></td>
                   <td>{{ document.created_at | date:'d MMM y, HH:mm' }}</td>
                   <td><div class="row-actions">
+                    <button class="icon-table-action download-action" type="button"
+                      [disabled]="downloadingDocumentId() !== null"
+                      (click)="downloadDocument(document)"
+                      [matTooltip]="downloadingDocumentId() === document.id ? 'Téléchargement en cours…' : 'Télécharger le PDF'"
+                      matTooltipPosition="above"
+                      [attr.aria-label]="(downloadingDocumentId() === document.id ? 'Téléchargement en cours pour ' : 'Télécharger ') + document.original_filename">
+                      <mat-icon>download</mat-icon>
+                    </button>
                     @if (document.status === 'ARCHIVED' || document.status === 'READY_FOR_REVIEW' || user()?.role === 'ADMIN') {
                       @if (document.status === 'ARCHIVED') {
                         <a class="icon-table-action" [routerLink]="['/documents', document.id]"

@@ -6,4 +6,5 @@ export interface User {
   email: string;
   role: string;
   is_active: boolean;
+  must_change_password: boolean;
 }

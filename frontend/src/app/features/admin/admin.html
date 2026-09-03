@@ -30,6 +30,7 @@
             <th>Utilisateur</th>
             <th>Email</th>
             <th>Statut</th>
+            <th>Mot de passe</th>
             <th>Action</th>
           </tr>
         </thead>
@@ -38,11 +39,16 @@
             <td>{{ user.email }}</td>
             <td><span class="app-badge" [class.app-badge-success]="user.is_active" [class.app-badge-neutral]="!user.is_active">{{ user.is_active ? 'Actif' : 'Inactif'
                 }}</span></td>
-            <td><button class="icon-table-action" type="button"
+            <td><span class="app-badge" [class.app-badge-warning]="user.must_change_password" [class.app-badge-success]="!user.must_change_password">{{ user.must_change_password ? 'Changement requis' : 'À jour' }}</span></td>
+            <td><div class="row-actions"><button class="icon-table-action" type="button"
+                [disabled]="user.role !== 'ARCHIVIST'"
+                [matTooltip]="user.role === 'ARCHIVIST' ? 'Réinitialiser le mot de passe' : 'Seuls les archivistes peuvent être gérés'" matTooltipPosition="above"
+                [attr.aria-label]="'Réinitialiser le mot de passe de ' + user.username"
+                (click)="openPasswordResetModal(user)"><mat-icon>key</mat-icon></button><button class="icon-table-action" type="button"
                 [matTooltip]="user.is_active ? 'Désactiver le compte' : 'Activer le compte'" matTooltipPosition="above"
                 [attr.aria-label]="user.is_active ? 'Désactiver le compte' : 'Activer le compte'"
-                (click)="toggleUser(user)"><mat-icon>{{ user.is_active ? 'person_off' : 'check_circle' }}</mat-icon></button></td>
-          </tr>} @empty { <tr><td colspan="4" class="empty">Aucun archiviste ne correspond aux filtres.</td></tr> }</tbody>
+                (click)="toggleUser(user)"><mat-icon>{{ user.is_active ? 'person_off' : 'check_circle' }}</mat-icon></button></div></td>
+          </tr>} @empty { <tr><td colspan="5" class="empty">Aucun archiviste ne correspond aux filtres.</td></tr> }</tbody>
       </table>
     </div>
   </section>
@@ -101,6 +107,8 @@
           <option value="DOCUMENT_RESTORED">Document restauré</option>
           <option value="USER_CREATED">Utilisateur créé</option>
           <option value="USER_STATUS_CHANGED">Statut utilisateur modifié</option>
+          <option value="USER_PASSWORD_RESET">Mot de passe réinitialisé</option>
+          <option value="USER_PASSWORD_CHANGED">Mot de passe modifié</option>
           <option value="SERVICE_CREATED">Service créé</option>
           <option value="SERVICE_STATUS_CHANGED">Statut service modifié</option>
         </select></label></div>
@@ -150,6 +158,37 @@
       <div class="modal-actions"><button class="app-button app-button-secondary" type="button"
           (click)="closeUserModal()">Annuler</button><button class="app-button app-button-primary"
           type="submit"><mat-icon>person_add</mat-icon> Créer le compte</button></div>
+    </form>
+  </section>
+</div>
+}
+@if (showPasswordResetModal()) {
+<div class="modal-backdrop" role="presentation" (click)="closePasswordResetModal()">
+  <section class="modal-card small-modal" role="dialog" aria-modal="true" aria-labelledby="password-reset-modal-title"
+    (click)="$event.stopPropagation()">
+    <div class="modal-heading">
+      <div>
+        <p class="eyebrow">SÉCURITÉ DU COMPTE</p>
+        <h2 id="password-reset-modal-title">Réinitialiser le mot de passe</h2>
+      </div><button class="modal-close" type="button" aria-label="Fermer"
+        (click)="closePasswordResetModal()"><mat-icon>close</mat-icon></button>
+    </div>
+    <p class="muted">Définissez un mot de passe temporaire pour <strong>{{ selectedUser()?.username }}</strong>. L’archiviste devra le remplacer à sa prochaine connexion.</p>
+    <form class="modal-form" [formGroup]="passwordResetForm" (ngSubmit)="resetPassword()">
+      <label class="app-label">Mot de passe temporaire<input class="app-input" type="password"
+          formControlName="newPassword" autocomplete="new-password" placeholder="8 à 128 caractères"></label>
+      @if (passwordResetForm.controls.newPassword.touched && passwordResetForm.controls.newPassword.invalid) {
+        <span class="field-error">Le mot de passe doit contenir entre 8 et 128 caractères.</span>
+      }
+      <label class="app-label">Confirmer le mot de passe<input class="app-input" type="password"
+          formControlName="confirmPassword" autocomplete="new-password" placeholder="Confirmez le mot de passe temporaire"></label>
+      @if (passwordResetError()) {
+        <p class="app-message app-message-error" role="alert">{{ passwordResetError() }}</p>
+      }
+      <p class="password-note">Communiquez ce mot de passe temporaire à l’archiviste par un canal interne sécurisé.</p>
+      <div class="modal-actions"><button class="app-button app-button-secondary" type="button"
+          (click)="closePasswordResetModal()">Annuler</button><button class="app-button app-button-primary"
+          type="submit" [disabled]="passwordResetSubmitting()"><mat-icon>key</mat-icon> {{ passwordResetSubmitting() ? 'Réinitialisation…' : 'Réinitialiser' }}</button></div>
     </form>
   </section>
 </div>

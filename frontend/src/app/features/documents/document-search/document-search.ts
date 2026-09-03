@@ -27,6 +27,7 @@ export class DocumentSearchComponent implements OnInit {
   readonly errorMessage = signal('');
   readonly documents = signal<ArchivedDocument[]>([]);
   readonly total = signal(0);
+  readonly downloadingDocumentId = signal<string | null>(null);
 
 
   ngOnInit(): void {
@@ -62,6 +63,31 @@ export class DocumentSearchComponent implements OnInit {
 
   openDetails(document: ArchivedDocument): void {
     this.router.navigate(['/documents', document.id]);
+  }
+
+  downloadDocument(item: ArchivedDocument): void {
+    if (this.downloadingDocumentId()) return;
+
+    this.downloadingDocumentId.set(item.id);
+    this.errorMessage.set('');
+    this.documentService.getFile(item.id).subscribe({
+      next: file => {
+        const url = URL.createObjectURL(file);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = item.original_filename;
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 0);
+        this.downloadingDocumentId.set(null);
+      },
+      error: () => {
+        this.downloadingDocumentId.set(null);
+        this.errorMessage.set('Impossible de télécharger le document.');
+      },
+    });
   }
 
   clear(): void { this.query = ''; this.search(); }

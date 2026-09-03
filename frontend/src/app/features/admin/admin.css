@@ -36,6 +36,9 @@
 .modal-form { display: grid; gap: 15px; margin-top: 22px; }
 .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 8px; }
 .eyebrow { margin: 0 0 8px; color: #3678dd; font-size: 11px; font-weight: 800; letter-spacing: .15em; }
+.row-actions { display: flex; justify-content: center; gap: 8px; }
+.field-error { color: var(--danger); font-size: 11px; }
+.password-note { margin: 0; color: var(--text-muted); font-size: 12px; line-height: 1.5; }
 
 @media (max-width: 600px) {
   .app-card { padding: 16px; }

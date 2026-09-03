@@ -37,6 +37,7 @@ export class DocumentListComponent implements OnInit {
   readonly errorMessage = signal('');
   readonly successMessage = signal('');
   readonly resumingDocumentId = signal<string | null>(null);
+  readonly downloadingDocumentId = signal<string | null>(null);
   readonly deletingDocumentId = signal<string | null>(null);
   readonly restoringDocumentId = signal<string | null>(null);
 
@@ -88,6 +89,31 @@ export class DocumentListComponent implements OnInit {
 
   continueReview(document: DocumentResponse): void {
     void this.router.navigate(['/documents/import'], { state: { documentId: document.id } });
+  }
+
+  downloadDocument(item: DocumentResponse): void {
+    if (this.downloadingDocumentId()) return;
+
+    this.downloadingDocumentId.set(item.id);
+    this.errorMessage.set('');
+    this.documentService.getFile(item.id).subscribe({
+      next: file => {
+        const url = URL.createObjectURL(file);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = item.original_filename;
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 0);
+        this.downloadingDocumentId.set(null);
+      },
+      error: () => {
+        this.downloadingDocumentId.set(null);
+        this.errorMessage.set('Impossible de télécharger le document.');
+      },
+    });
   }
 
   resumeProcessing(document: DocumentResponse): void {

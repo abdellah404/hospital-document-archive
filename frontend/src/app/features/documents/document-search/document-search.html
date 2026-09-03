@@ -69,7 +69,12 @@
             <td>
               <div class="row-actions"><button type="button" class="icon-table-action" matTooltip="Voir les détails"
                   matTooltipPosition="above" aria-label="Voir les détails"
-                  (click)="openDetails(document)"><mat-icon>visibility</mat-icon></button></div>
+                  (click)="openDetails(document)"><mat-icon>visibility</mat-icon></button><button type="button"
+                  class="icon-table-action download-action" [disabled]="downloadingDocumentId() !== null"
+                  [matTooltip]="downloadingDocumentId() === document.id ? 'Téléchargement en cours…' : 'Télécharger le PDF'"
+                  matTooltipPosition="above"
+                  [attr.aria-label]="(downloadingDocumentId() === document.id ? 'Téléchargement en cours pour ' : 'Télécharger ') + document.original_filename"
+                  (click)="downloadDocument(document)"><mat-icon>download</mat-icon></button></div>
             </td>
           </tr>}</tbody>
       </table>

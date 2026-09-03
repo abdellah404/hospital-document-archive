@@ -10,6 +10,11 @@ export interface AuditLog {
   entity_type: string; entity_id: string | null; description: string;
   details: Record<string, unknown> | null; created_at: string;
 }
+export interface PasswordResetResponse {
+  message: string;
+  user_id: string;
+  must_change_password: boolean;
+}
 
 @Injectable({ providedIn: 'root' })
 export class AdminService {
@@ -24,6 +29,12 @@ export class AdminService {
     return this.http.patch<User>(`${this.apiUrl}/auth/users/${id}/status`, null, {
       params: new HttpParams().set('is_active', isActive),
     });
+  }
+  resetUserPassword(id: string, newPassword: string): Observable<PasswordResetResponse> {
+    return this.http.patch<PasswordResetResponse>(
+      `${this.apiUrl}/auth/users/${id}/password`,
+      { new_password: newPassword }
+    );
   }
 
   getServices(): Observable<ServiceItem[]> { return this.http.get<ServiceItem[]>(`${this.apiUrl}/services`); }
