@@ -12,6 +12,9 @@ services:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
 
+    ports:
+      - "5432:5432"
+
     volumes:
       - archive_postgres_data:/var/lib/postgresql/data
 
@@ -35,6 +38,9 @@ services:
 
     command:
       redis-server --appendonly yes
+
+    ports:
+      - "6379:6379"
 
     volumes:
       - archive_redis_data:/data

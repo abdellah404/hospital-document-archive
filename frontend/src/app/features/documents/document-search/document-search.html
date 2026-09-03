@@ -1,4 +1,4 @@
-<div class="page-container">
+<div class="page-container table-page">
   <div class="page-heading mt-10">
     <div>
       <h1 class="page-title">Documents archivés</h1>
@@ -45,7 +45,7 @@
         ou un numéro d’hospitalisation.</span>
     </div> }
     @if (!loading() && documents().length) { <div class="app-table-wrap">
-      <table class="app-table">
+      <table class="app-table action-table">
         <thead>
           <tr>
             <th>Document</th>
@@ -67,8 +67,9 @@
             <td>{{ document.service.name }}</td>
             <td>{{ document.archived_at | date:'d MMM y' }}</td>
             <td>
-              <div class="row-actions"><button type="button" class="table-action"
-                  (click)="openDetails(document)"><mat-icon>info</mat-icon> Détails</button></div>
+              <div class="row-actions"><button type="button" class="icon-table-action" matTooltip="Voir les détails"
+                  matTooltipPosition="above" aria-label="Voir les détails"
+                  (click)="openDetails(document)"><mat-icon>visibility</mat-icon></button></div>
             </td>
           </tr>}</tbody>
       </table>

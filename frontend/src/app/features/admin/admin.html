@@ -1,4 +1,4 @@
-<div class="page-container" [class.logs-page]="section() === 'logs'">
+<div class="page-container table-page" [class.logs-page]="section() === 'logs'">
   <div class="page-heading mt-10">
     <div>
       <h1 class="page-title">Centre de gestion</h1>
@@ -24,7 +24,7 @@
   </section>
   <section class="app-card content-section">
     <div class="app-table-wrap">
-      <table class="app-table">
+      <table class="app-table action-table">
         <thead>
           <tr>
             <th>Utilisateur</th>
@@ -38,8 +38,10 @@
             <td>{{ user.email }}</td>
             <td><span class="app-badge" [class.app-badge-success]="user.is_active" [class.app-badge-neutral]="!user.is_active">{{ user.is_active ? 'Actif' : 'Inactif'
                 }}</span></td>
-            <td><button class="table-action" (click)="toggleUser(user)">{{ user.is_active ? 'Désactiver' : 'Activer'
-                }}</button></td>
+            <td><button class="icon-table-action" type="button"
+                [matTooltip]="user.is_active ? 'Désactiver le compte' : 'Activer le compte'" matTooltipPosition="above"
+                [attr.aria-label]="user.is_active ? 'Désactiver le compte' : 'Activer le compte'"
+                (click)="toggleUser(user)"><mat-icon>{{ user.is_active ? 'person_off' : 'check_circle' }}</mat-icon></button></td>
           </tr>} @empty { <tr><td colspan="4" class="empty">Aucun archiviste ne correspond aux filtres.</td></tr> }</tbody>
       </table>
     </div>
@@ -60,7 +62,7 @@
     </div>
 
     <div class="app-table-wrap">
-      <table class="app-table">
+      <table class="app-table action-table">
         <thead>
           <tr>
             <th>Service</th>
@@ -72,8 +74,10 @@
             <td><strong>{{ service.name }}</strong></td>
             <td><span class="app-badge" [class.app-badge-success]="service.is_active" [class.app-badge-neutral]="!service.is_active">{{ service.is_active ? 'Actif' :
                 'Inactif' }}</span></td>
-            <td><button class="table-action" (click)="toggleService(service)">{{ service.is_active ? 'Désactiver' :
-                'Activer' }}</button></td>
+            <td><button class="icon-table-action" type="button"
+                [matTooltip]="service.is_active ? 'Désactiver le service' : 'Activer le service'" matTooltipPosition="above"
+                [attr.aria-label]="service.is_active ? 'Désactiver le service' : 'Activer le service'"
+                (click)="toggleService(service)"><mat-icon>{{ service.is_active ? 'toggle_off' : 'toggle_on' }}</mat-icon></button></td>
           </tr>} @empty { <tr><td colspan="3" class="empty">Aucun service ne correspond au filtre.</td></tr> }</tbody>
       </table>
     </div>
@@ -93,6 +97,8 @@
           <option value="DOCUMENT_ARCHIVED">Document archivé</option>
           <option value="DOCUMENT_ARCHIVE_UPDATED">Document modifié</option>
           <option value="DOCUMENT_PROCESSING_RESUMED">Traitement relancé</option>
+          <option value="DOCUMENT_DELETED">Document supprimé</option>
+          <option value="DOCUMENT_RESTORED">Document restauré</option>
           <option value="USER_CREATED">Utilisateur créé</option>
           <option value="USER_STATUS_CHANGED">Statut utilisateur modifié</option>
           <option value="SERVICE_CREATED">Service créé</option>

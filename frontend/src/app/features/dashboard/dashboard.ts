@@ -3,6 +3,7 @@ import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
+import { MatTooltipModule } from '@angular/material/tooltip';
 
 import { AuthService } from '../../core/services/auth';
 import { DocumentResponse, DocumentService } from '../../core/services/document';
@@ -10,7 +11,7 @@ import { DocumentResponse, DocumentService } from '../../core/services/document'
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [DatePipe, FormsModule, MatIconModule, RouterLink],
+  imports: [DatePipe, FormsModule, MatIconModule, MatTooltipModule, RouterLink],
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.css',
 })

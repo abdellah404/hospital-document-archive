@@ -1,4 +1,4 @@
-<div class="page-container">
+<div class="page-container table-page">
   <div class="page-heading mt-10">
     <div>
       <h1 class="page-title">Bonjour, {{ user()?.username ?? 'Archiviste' }}</h1>
@@ -51,7 +51,7 @@
     @if (loading()) { <div class="loading-state">Chargement des documents récents…</div> }
     @if (!loading() && recentDocuments.length) {
     <div class="app-table-wrap">
-      <table class="app-table">
+      <table class="app-table action-table">
         <thead>
           <tr>
             <th>Document</th>
@@ -72,16 +72,18 @@
             <td>
               <div class="row-actions">
                 @if (user()?.role === 'ADMIN' && canResume(document.status)) {
-                <button class="table-action" type="button" [disabled]="resumingDocumentId() === document.id"
-                  (click)="resumeDocument(document)"><mat-icon>restart_alt</mat-icon>{{ resumingDocumentId() ===
-                  document.id ? 'Relance en cours…' : 'Relancer le traitement' }}</button>
+                <button class="icon-table-action" type="button" [disabled]="resumingDocumentId() === document.id"
+                  [matTooltip]="resumingDocumentId() === document.id ? 'Relance en cours…' : 'Relancer le traitement'"
+                  matTooltipPosition="above" [attr.aria-label]="resumingDocumentId() === document.id ? 'Relance en cours' : 'Relancer le traitement'"
+                  (click)="resumeDocument(document)"><mat-icon>{{ resumingDocumentId() === document.id ? 'hourglass_top' : 'restart_alt' }}</mat-icon></button>
                 }
                 @if (document.status === 'READY_FOR_REVIEW') {
-                <button class="table-action" type="button"
-                  (click)="continueDocument(document)"><mat-icon>fact_check</mat-icon>Continuer la vérification</button>
+                <button class="icon-table-action icon-action-primary" type="button" matTooltip="Continuer la vérification"
+                  matTooltipPosition="above" aria-label="Continuer la vérification"
+                  (click)="continueDocument(document)"><mat-icon>fact_check</mat-icon></button>
                 }
-                @if (document.status === 'ARCHIVED') { <a class="table-action" [routerLink]="['/documents', document.id]">Détails
-                  <mat-icon>chevron_right</mat-icon></a> }
+                @if (document.status === 'ARCHIVED') { <a class="icon-table-action" [routerLink]="['/documents', document.id]"
+                  matTooltip="Voir les détails" matTooltipPosition="above" aria-label="Voir les détails"><mat-icon>visibility</mat-icon></a> }
               </div>
             </td>
           </tr> }

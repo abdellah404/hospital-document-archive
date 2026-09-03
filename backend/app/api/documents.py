@@ -248,6 +248,9 @@ def get_documents(
 
     return db.scalars(
         select(Document)
+        .where(
+            Document.deleted_at.is_(None)
+        )
         .order_by(
             Document.created_at.desc()
         )
@@ -375,6 +378,7 @@ def search_archived_documents(
         .where(
             Document.status == "ARCHIVED",
             Document.archived_at.is_not(None),
+            Document.deleted_at.is_(None),
         )
     )
 
@@ -716,6 +720,73 @@ def search_archived_documents(
     }
 
 
+
+
+
+
+
+
+# ============================================================
+# ADMIN - LIST DELETED DOCUMENTS
+# ============================================================
+
+@router.get(
+    "/deleted",
+)
+def get_deleted_documents(
+    db: Session = Depends(get_db),
+    current_admin: User = Depends(
+        get_current_admin
+    ),
+):
+    documents = db.scalars(
+        select(Document)
+        .where(
+            Document.deleted_at.is_not(
+                None
+            )
+        )
+        .order_by(
+            Document.deleted_at.desc()
+        )
+    ).all()
+
+    return [
+        {
+            "id": str(
+                document.id
+            ),
+            "original_filename": (
+                document.original_filename
+            ),
+            "status": (
+                document.status
+            ),
+            "created_at": (
+                document.created_at
+            ),
+            "archived_at": (
+                document.archived_at
+            ),
+            "deleted_at": (
+                document.deleted_at
+            ),
+            "deleted_by": (
+                str(document.deleted_by)
+                if document.deleted_by
+                else None
+            ),
+        }
+        for document in documents
+    ]
+
+
+
+
+
+
+
+
 # ============================================================
 # ARCHIVED DOCUMENT DETAILS
 # ============================================================
@@ -733,6 +804,12 @@ def get_archived_document(
 
     if document is None:
         raise HTTPException(status_code=404, detail="Document not found")
+
+    if document.deleted_at is not None:
+        raise HTTPException(
+        status_code=404,
+        detail="Document not found",
+    )
 
     if document.status != "ARCHIVED":
         raise HTTPException(status_code=400, detail="Document is not archived")
@@ -804,6 +881,12 @@ def get_document_status(
             detail="Document not found",
         )
 
+    if document.deleted_at is not None:
+        raise HTTPException(
+        status_code=404,
+        detail="Document not found",
+    )
+
     return {
         "document_id": str(
             document.id
@@ -838,6 +921,12 @@ def get_document_file(
             status_code=404,
             detail="Document not found",
         )
+
+    if document.deleted_at is not None:
+        raise HTTPException(
+        status_code=404,
+        detail="Document not found",
+    )
 
     file_path = Path(
         document.storage_path
@@ -883,6 +972,12 @@ def review_document(
             status_code=404,
             detail="Document not found",
         )
+
+    if document.deleted_at is not None:
+        raise HTTPException(
+        status_code=404,
+        detail="Document not found",
+    )
 
     if document.status != (
         "READY_FOR_REVIEW"
@@ -1066,6 +1161,12 @@ def verify_document(
             status_code=404,
             detail="Document not found",
         )
+
+    if document.deleted_at is not None:
+        raise HTTPException(
+        status_code=400,
+        detail="Deleted document cannot be archived",
+    )
 
     if document.status != (
         "READY_FOR_REVIEW"
@@ -1391,6 +1492,14 @@ def update_archived_document(
             status_code=404,
             detail="Document not found",
         )
+
+    if document.deleted_at is not None:
+        raise HTTPException(
+        status_code=400,
+        detail=(
+            "Deleted document cannot be modified"
+        ),
+    )
 
     if document.status != "ARCHIVED":
         raise HTTPException(
@@ -1878,6 +1987,15 @@ def resume_document_processing(
             detail="Document not found",
         )
 
+
+    if document.deleted_at is not None:
+        raise HTTPException(
+        status_code=400,
+        detail=(
+            "Deleted document cannot be resumed"
+        ),
+    )
+
     current_status = (
         document.status
         .strip()
@@ -2007,5 +2125,245 @@ def resume_document_processing(
             detail=(
                 "Document exists but processing "
                 "could not be queued"
+            ),
+        )
+
+
+
+
+# ============================================================
+# ADMIN - SOFT DELETE DOCUMENT
+# ============================================================
+
+@router.delete(
+    "/{document_id}",
+)
+def delete_document(
+    document_id: uuid.UUID,
+    db: Session = Depends(get_db),
+    current_admin: User = Depends(
+        get_current_admin
+    ),
+):
+    document = db.scalar(
+        select(Document)
+        .where(
+            Document.id == document_id
+        )
+        .with_for_update()
+    )
+
+    if document is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Document not found",
+        )
+
+    if document.deleted_at is not None:
+        raise HTTPException(
+            status_code=400,
+            detail="Document is already deleted",
+        )
+
+    # Avoid deleting while a Celery worker is currently
+    # modifying the document.
+    current_status = (
+        document.status
+        .strip()
+        .upper()
+    )
+
+    if current_status in {
+        "OCR_PROCESSING",
+        "AI_PROCESSING",
+    }:
+        raise HTTPException(
+            status_code=409,
+            detail=(
+                "Document cannot be deleted "
+                "while processing is in progress"
+            ),
+        )
+
+    try:
+        deleted_at = datetime.utcnow()
+
+        document.deleted_at = deleted_at
+        document.deleted_by = (
+            current_admin.id
+        )
+
+        create_audit_log(
+            db,
+            user=current_admin,
+            action="DOCUMENT_DELETED",
+            entity_type="DOCUMENT",
+            entity_id=document.id,
+            description=(
+                f"L'administrateur "
+                f"'{current_admin.username}' "
+                f"a supprimé le document "
+                f"'{document.original_filename}'."
+            ),
+            details={
+                "filename": (
+                    document.original_filename
+                ),
+                "status": (
+                    document.status
+                ),
+                "hospitalization_id": (
+                    str(
+                        document.hospitalization_id
+                    )
+                    if document.hospitalization_id
+                    else None
+                ),
+                "archived_at": (
+                    document.archived_at.isoformat()
+                    if document.archived_at
+                    else None
+                ),
+                "deleted_at": (
+                    deleted_at.isoformat()
+                ),
+            },
+        )
+
+        db.commit()
+
+        return {
+            "message": (
+                "Document deleted successfully"
+            ),
+            "document_id": str(
+                document.id
+            ),
+            "deleted_at": (
+                document.deleted_at
+            ),
+        }
+
+    except HTTPException:
+        db.rollback()
+        raise
+
+    except Exception:
+        db.rollback()
+
+        raise HTTPException(
+            status_code=500,
+            detail=(
+                "Failed to delete document"
+            ),
+        )
+
+
+
+
+
+    # ============================================================
+# ADMIN - RESTORE SOFT DELETED DOCUMENT
+# ============================================================
+
+@router.post(
+    "/{document_id}/restore",
+)
+def restore_document(
+    document_id: uuid.UUID,
+    db: Session = Depends(get_db),
+    current_admin: User = Depends(
+        get_current_admin
+    ),
+):
+    document = db.scalar(
+        select(Document)
+        .where(
+            Document.id == document_id
+        )
+        .with_for_update()
+    )
+
+    if document is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Document not found",
+        )
+
+    if document.deleted_at is None:
+        raise HTTPException(
+            status_code=400,
+            detail="Document is not deleted",
+        )
+
+    try:
+        previous_deleted_at = (
+            document.deleted_at
+        )
+
+        previous_deleted_by = (
+            document.deleted_by
+        )
+
+        document.deleted_at = None
+        document.deleted_by = None
+
+        create_audit_log(
+            db,
+            user=current_admin,
+            action="DOCUMENT_RESTORED",
+            entity_type="DOCUMENT",
+            entity_id=document.id,
+            description=(
+                f"L'administrateur "
+                f"'{current_admin.username}' "
+                f"a restauré le document "
+                f"'{document.original_filename}'."
+            ),
+            details={
+                "filename": (
+                    document.original_filename
+                ),
+                "status": (
+                    document.status
+                ),
+                "previous_deleted_at": (
+                    previous_deleted_at.isoformat()
+                    if previous_deleted_at
+                    else None
+                ),
+                "previous_deleted_by": (
+                    str(previous_deleted_by)
+                    if previous_deleted_by
+                    else None
+                ),
+            },
+        )
+
+        db.commit()
+
+        return {
+            "message": (
+                "Document restored successfully"
+            ),
+            "document_id": str(
+                document.id
+            ),
+            "status": (
+                document.status
+            ),
+        }
+
+    except HTTPException:
+        db.rollback()
+        raise
+
+    except Exception:
+        db.rollback()
+
+        raise HTTPException(
+            status_code=500,
+            detail=(
+                "Failed to restore document"
             ),
         )

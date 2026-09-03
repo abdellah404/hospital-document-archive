@@ -169,6 +169,28 @@ export interface ResumeDocumentResponse {
   task_id: string;
 }
 
+export interface DeletedDocument {
+  id: string;
+  original_filename: string;
+  status: string;
+  created_at: string;
+  archived_at: string | null;
+  deleted_at: string;
+  deleted_by: string | null;
+}
+
+export interface DeleteDocumentResponse {
+  message: string;
+  document_id: string;
+  deleted_at: string;
+}
+
+export interface RestoreDocumentResponse {
+  message: string;
+  document_id: string;
+  status: string;
+}
+
 
 @Injectable({
   providedIn: 'root',
@@ -204,6 +226,23 @@ export class DocumentService {
 
   getDocuments(): Observable<DocumentResponse[]> {
     return this.http.get<DocumentResponse[]>(`${this.apiUrl}/documents`);
+  }
+
+  getDeletedDocuments(): Observable<DeletedDocument[]> {
+    return this.http.get<DeletedDocument[]>(`${this.apiUrl}/documents/deleted`);
+  }
+
+  deleteDocument(documentId: string): Observable<DeleteDocumentResponse> {
+    return this.http.delete<DeleteDocumentResponse>(
+      `${this.apiUrl}/documents/${documentId}`,
+    );
+  }
+
+  restoreDocument(documentId: string): Observable<RestoreDocumentResponse> {
+    return this.http.post<RestoreDocumentResponse>(
+      `${this.apiUrl}/documents/${documentId}/restore`,
+      null,
+    );
   }
 
   searchArchived(params: Record<string, string | number>): Observable<ArchivedDocumentResponse> {

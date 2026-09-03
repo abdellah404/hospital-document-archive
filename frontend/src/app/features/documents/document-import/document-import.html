@@ -1,714 +1,405 @@
 <div class="archivist-page page-container">
-
-
+  <header class="page-heading">
     <div>
-
-    
-      <h1 class="page-title">
-        Archiver un document
-      </h1>
-
-      
+      <span class="eyebrow">Nouveau dossier</span>
+      <h1 class="page-title">Archiver un document</h1>
+      <p>Importez un PDF, contrôlez les informations détectées puis validez son archivage.</p>
     </div>
-
-
+    <span class="secure-badge"
+      ><mat-icon aria-hidden="true">verified_user</mat-icon>Traitement sécurisé</span
+    >
+  </header>
 
   <main class="workflow-container">
-
-
-    <!-- ================================================= -->
-    <!-- PROGRESS -->
-    <!-- ================================================= -->
-
-    <section class="workflow-progress">
-
-      @for (
-        step of steps;
-        track step.key;
-        let index = $index
-      ) {
-
+    <nav class="workflow-progress" aria-label="Progression de l’archivage">
+      @for (step of steps; track step.key; let index = $index) {
         <div
           class="workflow-step"
           [class.active]="isStepActive(step.key)"
           [class.completed]="isStepCompleted(step.key)"
+          [attr.aria-current]="isStepActive(step.key) ? 'step' : null"
         >
-
-          <div class="step-number">
-
-            @if (
-              isStepCompleted(step.key)
-            ) {
-              ✓
-            }
-
-            @else {
+          <span class="step-number">
+            @if (isStepCompleted(step.key)) {
+              <mat-icon aria-hidden="true">check</mat-icon>
+            } @else {
               {{ index + 1 }}
             }
-
-          </div>
-
-          <span>
-            {{ step.label }}
           </span>
-
+          <span class="step-copy"
+            ><strong>{{ step.label }}</strong
+            ><small>Étape {{ index + 1 }} sur {{ steps.length }}</small></span
+          >
         </div>
-
-
-        @if (
-          index < steps.length - 1
-        ) {
-
-          <div class="step-line"></div>
-
+        @if (index < steps.length - 1) {
+          <span class="step-line" aria-hidden="true"></span>
         }
-
       }
+    </nav>
 
-    </section>
-
-
-    <!-- ================================================= -->
-    <!-- MESSAGES -->
-    <!-- ================================================= -->
-
-    @if (message) {
-
-      <div class="app-message app-message-success" role="status">
-        {{ message }}
-      </div>
-
-    }
-
-
-    @if (errorMessage) {
-
-      <div class="app-message app-message-error" role="alert">
-        {{ errorMessage }}
-      </div>
-
-    }
-
-
-    @if (processingMessage) {
-
-      <div class="app-message app-message-info processing-message" role="status" aria-live="polite">
-
-        <span class="spinner"></span>
-
-        {{ processingMessage }}
-
-      </div>
-
-    }
-
+    <div class="feedback-stack">
+      @if (message) {
+        <div class="app-message app-message-success feedback-message" role="status">
+          <mat-icon aria-hidden="true">check_circle</mat-icon><span>{{ message }}</span>
+        </div>
+      }
+      @if (errorMessage) {
+        <div class="app-message app-message-error feedback-message" role="alert">
+          <mat-icon aria-hidden="true">error</mat-icon><span>{{ errorMessage }}</span>
+        </div>
+      }
+    </div>
 
     @if (isProcessing) {
-
-      <div class="background-progress">
-
-        <div class="background-progress-header">
-          <span>Traitement en arrière-plan</span>
-          <strong>{{ processingPercent }}%</strong>
+      <section class="processing-panel" aria-live="polite">
+        <span class="processing-icon"><span class="spinner" aria-hidden="true"></span></span>
+        <div class="processing-copy">
+          <div class="processing-heading">
+            <strong>{{ processingMessage || 'Traitement du document…' }}</strong
+            ><span>{{ processingPercent }}%</span>
+          </div>
+          <div
+            class="progress-track"
+            role="progressbar"
+            [attr.aria-valuenow]="processingPercent"
+            aria-valuemin="0"
+            aria-valuemax="100"
+          >
+            <span class="progress-fill" [style.width.%]="processingPercent"></span>
+          </div>
+          <small>Vous pouvez laisser cette page ouverte pendant l’analyse automatique.</small>
         </div>
-
-        <div class="progress-track" role="progressbar"
-          [attr.aria-valuenow]="processingPercent"
-          aria-valuemin="0" aria-valuemax="100">
-          <div class="progress-fill"
-            [style.width.%]="processingPercent"></div>
-        </div>
-
-        <small>Analyse du document → extraction des informations → révision</small>
-
-      </div>
-
+      </section>
     }
 
-
-    <!-- ================================================= -->
-    <!-- IMPORT -->
-    <!-- ================================================= -->
-
-    @if (
-      currentStep === 'import' || currentStep === 'ocr' || currentStep === 'ai'
-    ) {
-
-      <section class="app-card workflow-card">
-
-        <div class="card-icon">
-          01
+    @if (currentStep === 'import' || currentStep === 'ocr' || currentStep === 'ai') {
+      <section class="app-card upload-card">
+        <div class="card-heading">
+          <span class="card-icon"><mat-icon aria-hidden="true">upload_file</mat-icon></span>
+          <div>
+            <span class="section-kicker">Étape 1</span>
+            <h2>Importer le document PDF</h2>
+            <p>Sélectionnez le document hospitalier à analyser et à archiver.</p>
+          </div>
         </div>
 
-        <h2>
-          Importer un document PDF
-        </h2>
+        <div class="upload-layout">
+          <div class="upload-main">
+            <label
+              class="drop-zone"
+              [class.dragging]="isDragging"
+              [class.has-file]="selectedFile"
+              [class.disabled]="isProcessing"
+              for="pdfFile"
+              (dragover)="onDragOver($event)"
+              (dragleave)="onDragLeave()"
+              (drop)="onFileDrop($event)"
+            >
+              <input
+                id="pdfFile"
+                type="file"
+                accept="application/pdf"
+                [disabled]="isProcessing"
+                (change)="onFileSelected($event)"
+              />
+              @if (selectedFile) {
+                <span class="drop-icon file-ready"
+                  ><mat-icon aria-hidden="true">picture_as_pdf</mat-icon></span
+                >
+                <span class="drop-title">{{ selectedFile.name }}</span>
+                <span class="drop-help"
+                  >{{ (selectedFile.size / 1024 / 1024).toFixed(2) }} MB · PDF prêt à importer</span
+                >
+                <span class="choose-file">Choisir un autre fichier</span>
+              } @else {
+                <span class="drop-icon"><mat-icon aria-hidden="true">cloud_upload</mat-icon></span>
+                <span class="drop-title">Déposez votre PDF ici</span>
+                <span class="drop-help">ou cliquez pour parcourir vos fichiers</span>
+                <span class="choose-file">Sélectionner un PDF</span>
+              }
+            </label>
+          </div>
 
-       
+          <aside class="upload-guidance" aria-label="Informations sur l’import">
+            <h3>Avant de commencer</h3>
+            <ul>
+              <li>
+                <mat-icon aria-hidden="true">check_circle</mat-icon
+                ><span>Format PDF uniquement</span>
+              </li>
+              <li>
+                <mat-icon aria-hidden="true">check_circle</mat-icon
+                ><span>Un document à la fois</span>
+              </li>
+              <li>
+                <mat-icon aria-hidden="true">check_circle</mat-icon
+                ><span>Les données seront à vérifier avant archivage</span>
+              </li>
+            </ul>
+            <div class="privacy-note">
+              <mat-icon aria-hidden="true">lock</mat-icon
+              ><span>Le document reste dans votre espace hospitalier sécurisé.</span>
+            </div>
+          </aside>
+        </div>
 
+        <footer class="card-actions">
+          <span class="action-hint">L’analyse démarre après confirmation.</span>
+          <button
+            class="app-button app-button-primary import-button"
+            type="button"
+            [disabled]="!selectedFile || isProcessing"
+            (click)="importPdf()"
+          >
+            @if (isProcessing) {
+              <span class="button-spinner" aria-hidden="true"></span>Importation…
+            } @else {
+              <mat-icon aria-hidden="true">arrow_forward</mat-icon>Importer et analyser
+            }
+          </button>
+        </footer>
+      </section>
+    }
 
-        <label
-          class="field-label"
-          for="pdfFile"
-        >
-          Document PDF
-        </label>
+    @if (currentStep === 'review' || currentStep === 'verify') {
+      <section class="review-section">
+        <div class="review-heading">
+          <div>
+            <span class="section-kicker">{{
+              currentStep === 'verify' ? 'Étape 3' : 'Étape 2'
+            }}</span>
+            <h2>
+              {{ currentStep === 'verify' ? 'Vérification finale' : 'Contrôler les informations' }}
+            </h2>
+            <p>
+              {{
+                currentStep === 'verify'
+                  ? 'Comparez une dernière fois les informations avec le document original.'
+                  : 'Corrigez les informations extraites automatiquement si nécessaire.'
+              }}
+            </p>
+          </div>
+          <span class="ai-badge"
+            ><mat-icon aria-hidden="true">auto_awesome</mat-icon>Prérempli automatiquement</span
+          >
+        </div>
 
-
-        <input class="app-input"
-          id="pdfFile"
-          type="file"
-          accept="application/pdf"
-          (change)="onFileSelected($event)"
-        />
-
-
-        @if (selectedFile) {
-
-          <div class="selected-file">
-
-            <span class="file-icon">
-              PDF
-            </span>
-
-            <div>
-
-              <strong>
-                {{ selectedFile.name }}
-              </strong>
-
-              <small>
-                {{
-                  (
-                    selectedFile.size
-                    / 1024
-                    / 1024
-                  ).toFixed(2)
-                }}
-                MB
-              </small>
-
+        <div class="review-workspace">
+          <div class="form-panel">
+            <div class="panel-heading">
+              <span class="panel-icon"><mat-icon aria-hidden="true">assignment_ind</mat-icon></span>
+              <div>
+                <h3>Informations du dossier</h3>
+                <p>Les champs marqués d’un astérisque sont obligatoires.</p>
+              </div>
             </div>
 
-          </div>
-
-        }
-
-
-        <button
-          class="app-button app-button-primary"
-          type="button"
-          [disabled]="
-            !selectedFile ||
-            isProcessing
-          "
-          (click)="importPdf()"
-        >
-
-          {{
-            isProcessing
-              ? 'Importation…'
-              : 'Importer le PDF'
-          }}
-
-        </button>
-
-      </section>
-
-    }
-
-
-    <!-- ================================================= -->
-    <!-- OCR -->
-    <!-- ================================================= -->
-
-    @if (
-      false && currentStep === 'ocr'
-    ) {
-
-      <section
-        class="app-card workflow-card centered-card"
-      >
-
-        <div class="card-icon">
-          02
-        </div>
-
-        <h2>
-          OCR processing
-        </h2>
-
-        <p class="card-description">
-          Le traitement du document est en cours en arrière-plan.
-        </p>
-
-        <div class="process-box">
-
-          <span class="process-symbol">
-            ⌕
-          </span>
-
-          <strong>
-            Analyse automatique du document
-          </strong>
-
-          <span>
-            {{ processingMessage }}
-          </span>
-
-        </div>
-
-      </section>
-
-    }
-
-
-    <!-- ================================================= -->
-    <!-- AI -->
-    <!-- ================================================= -->
-
-    @if (
-      false && currentStep === 'ai'
-    ) {
-
-      <section
-        class="app-card workflow-card centered-card"
-      >
-
-        <div class="card-icon gemini-icon">
-          03
-        </div>
-
-        <h2>
-          Gemini AI extraction
-        </h2>
-
-        <p class="card-description">
-          Gemini is analyzing the OCR text and extracting the information.
-        </p>
-
-        <div class="extraction-list">
-
-          <div>
-            Informations du patient
-          </div>
-
-          <div>
-            Numéro d’hospitalisation
-          </div>
-
-          <div>
-            Service hospitalier
-          </div>
-
-          <div>
-            Date d’admission
-          </div>
-
-          <div>
-            Date de sortie
-          </div>
-
-        </div>
-
-      </section>
-
-    }
-
-
-    <!-- ================================================= -->
-    <!-- REVIEW / VERIFY -->
-    <!-- ================================================= -->
-
-    @if (
-      currentStep === 'review'
-      ||
-      currentStep === 'verify'
-    ) {
-
-      <section
-        class="app-card workflow-card review-card"
-      >
-
-        <div class="card-icon">
-          04
-        </div>
-
-        <h2>
-          Révision du document
-        </h2>
-
-        <p class="card-description">
-          Vérifiez chaque information extraite avec le PDF original.
-        </p>
-
-
-        <!-- PDF -->
-
-        @if (pdfViewerUrl) {
-
-          <div class="pdf-preview">
-
-            <iframe
-              [src]="pdfViewerUrl"
-              title="Aperçu du document"
-            ></iframe>
-
-          </div>
-
-        }
-
-
-        <!-- FORM -->
-
-        <div class="form-grid">
-
-
-          <div class="form-field">
-
-            <label for="cni">
-              CNI *
-            </label>
-
-            <input class="app-input"
-              id="cni"
-              type="text"
-              [(ngModel)]="
-                extractedInformation.cni
-              "
-            />
-
-          </div>
-
-
-          <div class="form-field">
-
-            <label for="firstName">
-              Prénom *
-            </label>
-
-            <input class="app-input"
-              id="firstName"
-              type="text"
-              [(ngModel)]="
-                extractedInformation.firstName
-              "
-            />
-
-          </div>
-
-
-          <div class="form-field">
-
-            <label for="lastName">
-              Nom *
-            </label>
-
-            <input class="app-input"
-              id="lastName"
-              type="text"
-              [(ngModel)]="
-                extractedInformation.lastName
-              "
-            />
-
-          </div>
-
-
-          <div class="form-field">
-
-            <label for="hospitalizationNumber">
-              Numéro d'hospitalisation *
-            </label>
-
-            <input class="app-input"
-              id="hospitalizationNumber"
-              type="text"
-              [(ngModel)]="
-                extractedInformation.hospitalizationNumber
-              "
-            />
-
-          </div>
-
-
-          <div class="form-field">
-
-            <label for="service">
-              Service *
-            </label>
-
-            <select class="app-select"
-              id="service"
-              [(ngModel)]="
-                extractedInformation.serviceId
-              "
-            >
-
-              <option
-                value=""
-                disabled
-              >
-                Sélectionnez un service
-              </option>
-
-
-              @for (
-                service of services;
-                track service.id
-              ) {
-
-                <option
-                  [value]="service.id"
+            @if (currentStep === 'verify') {
+              <div class="verification-box">
+                <mat-icon aria-hidden="true">fact_check</mat-icon>
+                <div>
+                  <strong>Confirmation requise</strong>
+                  <p>
+                    Assurez-vous que l’identité, l’hospitalisation, le service et les dates
+                    correspondent au PDF.
+                  </p>
+                </div>
+              </div>
+            }
+
+            <div class="form-section">
+              <h4>Identité du patient</h4>
+              <div class="form-grid">
+                <div class="form-field full-field">
+                  <label for="cni">CNI <span aria-hidden="true">*</span></label>
+                  <input
+                    class="app-input"
+                    id="cni"
+                    type="text"
+                    autocomplete="off"
+                    [readonly]="currentStep === 'verify'"
+                    [(ngModel)]="extractedInformation.cni"
+                  />
+                </div>
+                <div class="form-field">
+                  <label for="firstName">Prénom <span aria-hidden="true">*</span></label>
+                  <input
+                    class="app-input"
+                    id="firstName"
+                    type="text"
+                    autocomplete="given-name"
+                    [readonly]="currentStep === 'verify'"
+                    [(ngModel)]="extractedInformation.firstName"
+                  />
+                </div>
+                <div class="form-field">
+                  <label for="lastName">Nom <span aria-hidden="true">*</span></label>
+                  <input
+                    class="app-input"
+                    id="lastName"
+                    type="text"
+                    autocomplete="family-name"
+                    [readonly]="currentStep === 'verify'"
+                    [(ngModel)]="extractedInformation.lastName"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div class="form-section">
+              <h4>Hospitalisation</h4>
+              <div class="form-grid">
+                <div class="form-field full-field">
+                  <label for="hospitalizationNumber"
+                    >Numéro d’hospitalisation <span aria-hidden="true">*</span></label
+                  >
+                  <input
+                    class="app-input"
+                    id="hospitalizationNumber"
+                    type="text"
+                    autocomplete="off"
+                    [readonly]="currentStep === 'verify'"
+                    [(ngModel)]="extractedInformation.hospitalizationNumber"
+                  />
+                </div>
+                <div class="form-field full-field">
+                  <label for="service">Service <span aria-hidden="true">*</span></label>
+                  <select
+                    class="app-select"
+                    id="service"
+                    [disabled]="currentStep === 'verify'"
+                    [(ngModel)]="extractedInformation.serviceId"
+                  >
+                    <option value="" disabled>Sélectionnez un service</option>
+                    @for (service of services; track service.id) {
+                      <option [value]="service.id">{{ service.name }}</option>
+                    }
+                  </select>
+                </div>
+                <div class="form-field">
+                  <label for="admissionDate"
+                    >Date d’admission <span aria-hidden="true">*</span></label
+                  >
+                  <input
+                    class="app-input"
+                    id="admissionDate"
+                    type="date"
+                    [readonly]="currentStep === 'verify'"
+                    [(ngModel)]="extractedInformation.admissionDate"
+                  />
+                </div>
+                <div class="form-field">
+                  <label for="dischargeDate"
+                    >Date de sortie <span class="optional">Optionnel</span></label
+                  >
+                  <input
+                    class="app-input"
+                    id="dischargeDate"
+                    type="date"
+                    [readonly]="currentStep === 'verify'"
+                    [(ngModel)]="extractedInformation.dischargeDate"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <footer class="review-actions">
+              @if (currentStep === 'review') {
+                <span>Vérifiez tous les champs avant de continuer.</span>
+                <button
+                  class="app-button app-button-primary"
+                  type="button"
+                  (click)="openVerification()"
                 >
-                  {{ service.name }}
-                </option>
-
+                  Continuer<mat-icon aria-hidden="true">arrow_forward</mat-icon>
+                </button>
+              } @else {
+                <button
+                  class="app-button app-button-secondary"
+                  type="button"
+                  (click)="correctInformation()"
+                >
+                  <mat-icon aria-hidden="true">edit</mat-icon>Modifier
+                </button>
+                <button
+                  class="app-button app-button-primary"
+                  type="button"
+                  [disabled]="isProcessing"
+                  (click)="verifyAndArchive()"
+                >
+                  @if (isProcessing) {
+                    <span class="button-spinner" aria-hidden="true"></span>Archivage…
+                  } @else {
+                    <mat-icon aria-hidden="true">archive</mat-icon>Vérifier et archiver
+                  }
+                </button>
               }
-
-            </select>
-
+            </footer>
           </div>
 
-
-          <div class="form-field">
-
-            <label for="admissionDate">
-              Date d'admission *
-            </label>
-
-            <input class="app-input"
-              id="admissionDate"
-              type="date"
-              [(ngModel)]="
-                extractedInformation.admissionDate
-              "
-            />
-
-          </div>
-
-
-          <div class="form-field">
-
-            <label for="dischargeDate">
-              Date de sortie
-            </label>
-
-            <input class="app-input"
-              id="dischargeDate"
-              type="date"
-              [(ngModel)]="
-                extractedInformation.dischargeDate
-              "
-            />
-
-          </div>
-
+          <aside class="preview-panel">
+            <div class="panel-heading preview-heading">
+              <span class="panel-icon pdf-panel-icon"
+                ><mat-icon aria-hidden="true">picture_as_pdf</mat-icon></span
+              >
+              <div>
+                <h3>Document original</h3>
+                <p>Utilisez cet aperçu pour contrôler les données.</p>
+              </div>
+              <span class="pdf-label">PDF</span>
+            </div>
+            @if (pdfViewerUrl) {
+              <div class="pdf-preview">
+                <iframe [src]="pdfViewerUrl" title="Aperçu du document original"></iframe>
+              </div>
+            } @else {
+              <div class="preview-loading" role="status">
+                <span class="spinner" aria-hidden="true"></span><span>Chargement de l’aperçu…</span>
+              </div>
+            }
+          </aside>
         </div>
-
-
-        <!-- REVIEW -->
-
-        @if (
-          currentStep === 'review'
-        ) {
-
-          <div class="action-row">
-
-            <button
-              class="app-button app-button-primary"
-              type="button"
-              (click)="openVerification()"
-            >
-              Les informations sont correctes
-            </button>
-
-          </div>
-
-        }
-
-
-        <!-- VERIFY -->
-
-        @if (
-          currentStep === 'verify'
-        ) {
-
-          <div class="verification-box">
-
-            <strong>
-              Vérification finale obligatoire
-            </strong>
-
-            <p>
-              Vérifiez les informations avec le document original.
-              L'IA fournit uniquement des suggestions.
-              La date d'admission, la date de sortie,
-              le numéro d'hospitalisation, le patient
-              et le service doivent être vérifiés avant archivage.
-            </p>
-
-          </div>
-
-
-          <div class="action-row">
-
-            <button
-              class="app-button app-button-secondary"
-              type="button"
-              (click)="correctInformation()"
-            >
-              Corriger les informations
-            </button>
-
-
-            <button
-              class="app-button app-button-primary"
-              type="button"
-              [disabled]="isProcessing"
-              (click)="verifyAndArchive()"
-            >
-
-              {{
-                isProcessing
-                  ? 'Archivage…'
-                  : 'Vérifier et archiver'
-              }}
-
-            </button>
-
-          </div>
-
-        }
-
       </section>
-
     }
 
-
-    <!-- ================================================= -->
-    <!-- ARCHIVED -->
-    <!-- ================================================= -->
-
-    @if (
-      currentStep === 'archived'
-    ) {
-
-      <section
-        class="app-card workflow-card centered-card archived-card"
-      >
-
-        <div class="archive-check">
-          ✓
-        </div>
-
-        <h2>
-          Document archivé
-        </h2>
-
-        <p class="card-description">
-          Les informations ont été vérifiées et le document a été archivé.
+    @if (currentStep === 'archived') {
+      <section class="app-card archived-card">
+        <span class="archive-check"><mat-icon aria-hidden="true">check</mat-icon></span>
+        <span class="section-kicker">Archivage terminé</span>
+        <h2>Document archivé avec succès</h2>
+        <p>
+          Les informations ont été vérifiées et le document est désormais disponible dans les
+          archives.
         </p>
-
-
         <div class="archive-summary">
-
           <div>
-
-            <span>
-              Patient
-            </span>
-
-            <strong>
-              {{ extractedInformation.firstName }}
-              {{ extractedInformation.lastName }}
-            </strong>
-
+            <span>Patient</span
+            ><strong
+              >{{ extractedInformation.firstName }} {{ extractedInformation.lastName }}</strong
+            >
           </div>
-
-
           <div>
-
-            <span>
-              CNI
-            </span>
-
-            <strong>
-              {{ extractedInformation.cni }}
-            </strong>
-
+            <span>CNI</span><strong>{{ extractedInformation.cni }}</strong>
           </div>
-
-
           <div>
-
-            <span>
-              Hospitalisation
-            </span>
-
-            <strong>
-              {{ extractedInformation.hospitalizationNumber }}
-            </strong>
-
+            <span>Hospitalisation</span
+            ><strong>{{ extractedInformation.hospitalizationNumber }}</strong>
           </div>
-
-
           <div>
-
-            <span>
-              Service
-            </span>
-
-            <strong>
-              {{ extractedInformation.serviceName }}
-            </strong>
-
+            <span>Service</span><strong>{{ extractedInformation.serviceName }}</strong>
           </div>
-
-
           <div>
-
-            <span>
-              Date d'admission
-            </span>
-
-            <strong>
-              {{ extractedInformation.admissionDate }}
-            </strong>
-
+            <span>Date d’admission</span><strong>{{ extractedInformation.admissionDate }}</strong>
           </div>
-
-
           <div>
-
-            <span>
-              Date de sortie
-            </span>
-
-            <strong>
-              {{
-                extractedInformation.dischargeDate
-                || 'Non renseignée'
-              }}
-            </strong>
-
+            <span>Date de sortie</span
+            ><strong>{{ extractedInformation.dischargeDate || 'Non renseignée' }}</strong>
           </div>
-
         </div>
-
-
-        <button
-          class="app-button app-button-primary"
-          type="button"
-          (click)="resetWorkflow()"
-        >
-          Importer un autre document
+        <button class="app-button app-button-primary" type="button" (click)="resetWorkflow()">
+          <mat-icon aria-hidden="true">add</mat-icon>Importer un autre document
         </button>
-
       </section>
-
     }
-
   </main>
-
 </div>

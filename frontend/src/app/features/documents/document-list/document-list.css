@@ -1,5 +1,8 @@
 :host { display: block; }
+.page-heading { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
 .page-heading .muted { margin: .5rem 0 0; font-size: .8125rem; }
+.heading-actions { display: flex; gap: .75rem; }
+.trash-count { display: inline-grid; min-width: 1.25rem; height: 1.25rem; place-items: center; border-radius: 999px; background: var(--danger); padding: 0 .3rem; color: white; font-size: .625rem; font-weight: 800; line-height: 1; }
 .list-controls { display: flex; align-items: end; gap: 1rem; margin: 1.75rem 0 1rem; }
 .search-control { position: relative; flex: 1; }
 .search-control mat-icon { position: absolute; top: .7rem; left: .75rem; color: #7d91aa; font-size: 1.25rem; }
@@ -8,7 +11,15 @@
 .document-list-card { padding: 1rem 1.5rem; }
 .document-name { display: flex; min-width: 190px; align-items: center; gap: .5625rem; color: #263b59; font-weight: 600; }
 .document-name mat-icon { color: #ee5b63; font-size: 1.25rem; }
-.row-actions { display: flex; min-width: 140px; flex-wrap: wrap; gap: .75rem; }
+.app-table th:last-child,
+.app-table td:last-child { width: 1%; text-align: center; white-space: nowrap; }
+.row-actions { display: flex; min-width: 0; justify-content: center; gap: .375rem; }
+.no-actions { color: #94a3b8; font-size: .75rem; }
 .table-action:disabled { cursor: wait; opacity: .55; }
+.delete-action { color: var(--danger); }
+.delete-action:hover { background: #fff1f2; color: #8f1f2a; }
+.restore-action { color: var(--brand-green); }
+.restore-action:hover { background: #eaf7f0; color: #126443; }
+.deleted-document { opacity: .78; }
 .list-state { display: grid; min-height: 220px; place-items: center; color: #8290a3; }
-@media (max-width: 650px) { .list-controls { align-items: stretch; flex-direction: column; } .filter-control { min-width: 0; } .document-list-card { padding: 1rem; } }
+@media (max-width: 650px) { .page-heading { align-items: flex-start; flex-direction: column; } .list-controls { align-items: stretch; flex-direction: column; } .filter-control { min-width: 0; } .document-list-card { padding: 1rem; } }

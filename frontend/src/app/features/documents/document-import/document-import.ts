@@ -1,50 +1,25 @@
-import {
-  Component,
-  ChangeDetectorRef,
-  inject,
-  OnDestroy,
-  OnInit,
-} from '@angular/core';
+import { Component, ChangeDetectorRef, inject, OnDestroy, OnInit } from '@angular/core';
 
-import {
-  DomSanitizer,
-  SafeResourceUrl,
-} from '@angular/platform-browser';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 
-import {
-  FormsModule,
-} from '@angular/forms';
+import { FormsModule } from '@angular/forms';
 
-import {
-  Router,
-} from '@angular/router';
+import { MatIconModule } from '@angular/material/icon';
 
-import {
-  DocumentService,
-  DocumentReview,
-  AIResult,
-} from '../../../core/services/document';
+import { Router } from '@angular/router';
 
+import { DocumentService, DocumentReview, AIResult } from '../../../core/services/document';
 
-type WorkflowStep =
-  | 'import'
-  | 'ocr'
-  | 'ai'
-  | 'review'
-  | 'verify'
-  | 'archived';
-
+type WorkflowStep = 'import' | 'ocr' | 'ai' | 'review' | 'verify' | 'archived';
 
 interface ExtractedInformation {
-
   cni: string;
 
   firstName: string;
 
   lastName: string;
 
-  hospitalizationNumber:
-    string;
+  hospitalizationNumber: string;
 
   serviceId: string;
 
@@ -55,38 +30,25 @@ interface ExtractedInformation {
   dischargeDate: string;
 }
 
-
 @Component({
-  selector:
-    'app-document-import',
+  selector: 'app-document-import',
 
   standalone: true,
 
-  imports: [
-    FormsModule,
-  ],
+  imports: [FormsModule, MatIconModule],
 
-  templateUrl:
-    './document-import.html',
+  templateUrl: './document-import.html',
 
-  styleUrl:
-    './document-import.css',
+  styleUrl: './document-import.css',
 })
-export class DocumentImportComponent
-  implements OnDestroy, OnInit {
+export class DocumentImportComponent implements OnDestroy, OnInit {
+  private documentService = inject(DocumentService);
 
-  private documentService =
-    inject(DocumentService);
+  private sanitizer = inject(DomSanitizer);
 
-  private sanitizer =
-    inject(DomSanitizer);
+  private changeDetector = inject(ChangeDetectorRef);
 
-  private changeDetector =
-    inject(ChangeDetectorRef);
-
-  private router =
-    inject(Router);
-
+  private router = inject(Router);
 
   readonly steps = [
     { key: 'import', label: 'Importer' },
@@ -94,21 +56,13 @@ export class DocumentImportComponent
     { key: 'verify', label: 'Vérifier et archiver' },
   ] as const;
 
+  currentStep: WorkflowStep = 'import';
 
-  currentStep:
-    WorkflowStep =
-    'import';
+  selectedFile: File | null = null;
 
+  isDragging = false;
 
-  selectedFile:
-    File | null =
-    null;
-
-
-  documentId:
-    string | null =
-    null;
-
+  documentId: string | null = null;
 
   isProcessing = false;
 
@@ -120,17 +74,13 @@ export class DocumentImportComponent
 
   processingPercent = 0;
 
-
   services: {
     id: string;
     name: string;
     is_active: boolean;
   }[] = [];
 
-
-  extractedInformation:
-    ExtractedInformation = {
-
+  extractedInformation: ExtractedInformation = {
     cni: '',
 
     firstName: '',
@@ -148,28 +98,17 @@ export class DocumentImportComponent
     dischargeDate: '',
   };
 
+  private pdfUrl: string | null = null;
 
-  private pdfUrl:
-    string | null =
-    null;
+  pdfViewerUrl: SafeResourceUrl | null = null;
 
-
-  pdfViewerUrl:
-    SafeResourceUrl | null =
-    null;
-
-
-  private pollTimer:
-    ReturnType<typeof setTimeout>
-    | null =
-    null;
+  private pollTimer: ReturnType<typeof setTimeout> | null = null;
 
   private reviewLoadAttempts = 0;
 
   private waitingForResumedWorker = false;
 
   private resumedStatusAttempts = 0;
-
 
   ngOnInit(): void {
     const state = (history.state ?? {}) as {
@@ -194,367 +133,278 @@ export class DocumentImportComponent
     this.pollDocumentStatus();
   }
 
-
   // ========================================================
   // FILE
   // ========================================================
 
-  onFileSelected(
-    event: Event,
-  ): void {
+  onFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
 
-    const input =
-      event.target as
-      HTMLInputElement;
-
-    const file =
-      input.files?.[0] ??
-      null;
+    const file = input.files?.[0] ?? null;
 
     this.message = '';
 
     this.errorMessage = '';
 
-    if (!file) {
-
-      this.selectedFile =
-        null;
-
-      return;
-    }
-
-    if (
-      file.type !==
-      'application/pdf'
-    ) {
-
-      this.selectedFile =
-        null;
-
-      this.errorMessage =
-        'Seuls les fichiers PDF sont acceptés.';
-
-      return;
-    }
-
-    this.selectedFile =
-      file;
-
-    this.currentStep =
-      'import';
+    this.selectFile(file);
   }
 
+  onDragOver(event: DragEvent): void {
+    event.preventDefault();
+    if (!this.isProcessing) this.isDragging = true;
+  }
+
+  onDragLeave(): void {
+    this.isDragging = false;
+  }
+
+  onFileDrop(event: DragEvent): void {
+    event.preventDefault();
+    this.isDragging = false;
+    if (this.isProcessing) return;
+    this.message = '';
+    this.errorMessage = '';
+    this.selectFile(event.dataTransfer?.files?.[0] ?? null);
+  }
+
+  private selectFile(file: File | null): void {
+    if (!file) {
+      this.selectedFile = null;
+      return;
+    }
+
+    if (file.type !== 'application/pdf' && !file.name.toLocaleLowerCase().endsWith('.pdf')) {
+      this.selectedFile = null;
+      this.errorMessage = 'Seuls les fichiers PDF sont acceptés.';
+      return;
+    }
+
+    this.selectedFile = file;
+    this.currentStep = 'import';
+  }
 
   // ========================================================
   // IMPORT
   // ========================================================
 
   importPdf(): void {
-
     if (!this.selectedFile) {
-
-      this.errorMessage =
-        'Veuillez sélectionner un document PDF.';
+      this.errorMessage = 'Veuillez sélectionner un document PDF.';
 
       return;
     }
 
-    this.isProcessing =
-      true;
+    this.isProcessing = true;
 
-    this.errorMessage =
-      '';
+    this.errorMessage = '';
 
-    this.message =
-      '';
+    this.message = '';
 
-    this.processingMessage =
-      'Téléversement du PDF…';
+    this.processingMessage = 'Téléversement du PDF…';
 
+    this.documentService.upload(this.selectedFile).subscribe({
+      next: (document) => {
+        this.documentId = document.id;
 
-    this.documentService
-      .upload(this.selectedFile)
-      .subscribe({
+        this.currentStep = 'ocr';
 
-        next: (document) => {
+        this.isProcessing = true;
 
-          this.documentId =
-            document.id;
+        this.message = 'PDF importé avec succès.';
 
-          this.currentStep =
-            'ocr';
+        this.processingMessage = 'Document reçu. Le traitement en arrière-plan a démarré.';
 
-          this.isProcessing =
-            true;
+        this.processingPercent = 5;
 
-          this.message =
-            'PDF importé avec succès.';
+        this.reviewLoadAttempts = 0;
 
-          this.processingMessage =
-            'Document reçu. Le traitement en arrière-plan a démarré.';
+        this.loadPdf();
 
-          this.processingPercent = 5;
+        this.loadServices();
 
-          this.reviewLoadAttempts = 0;
+        this.pollDocumentStatus();
 
-          this.loadPdf();
+        this.changeDetector.detectChanges();
+      },
 
-          this.loadServices();
+      error: (error) => {
+        this.isProcessing = false;
 
-          this.pollDocumentStatus();
+        this.processingMessage = '';
 
-          this.changeDetector.detectChanges();
-        },
-
-        error: (error) => {
-
-          this.isProcessing =
-            false;
-
-          this.processingMessage =
-            '';
-
-          this.errorMessage =
-            error.error?.detail ??
-            'Échec de l’importation du PDF.';
-        },
-      });
+        this.errorMessage = error.error?.detail ?? 'Échec de l’importation du PDF.';
+      },
+    });
   }
-
 
   // ========================================================
   // BACKGROUND STATUS
   // ========================================================
 
   private pollDocumentStatus(): void {
-
     if (!this.documentId) {
       return;
     }
 
-    this.documentService
-      .getStatus(this.documentId)
-      .subscribe({
+    this.documentService.getStatus(this.documentId).subscribe({
+      next: (result) => {
+        const documentStatus = result.status.trim().toUpperCase();
 
-        next: (result) => {
+        switch (documentStatus) {
+          case 'IMPORTED':
+            this.currentStep = 'ocr';
+            this.processingPercent = 10;
 
-          const documentStatus =
-            result.status.trim().toUpperCase();
+            this.isProcessing = true;
 
-          switch (
-            documentStatus
-          ) {
+            this.processingMessage = 'En attente du traitement du document…';
 
-            case 'IMPORTED':
-              this.currentStep = 'ocr';
-              this.processingPercent = 10;
+            this.scheduleStatusPoll();
 
-              this.isProcessing =
-                true;
+            break;
 
-              this.processingMessage =
-                'En attente du traitement du document…';
+          case 'OCR_PROCESSING':
+            this.waitingForResumedWorker = false;
+            this.currentStep = 'ocr';
+            this.processingPercent = 40;
 
-              this.scheduleStatusPoll();
+            this.isProcessing = true;
 
-              break;
+            this.processingMessage = 'Le document est en cours d’analyse…';
 
+            this.scheduleStatusPoll();
 
-            case 'OCR_PROCESSING':
-              this.waitingForResumedWorker = false;
-              this.currentStep = 'ocr';
-              this.processingPercent = 40;
+            break;
 
-              this.isProcessing =
-                true;
+          case 'AI_PROCESSING':
+            this.waitingForResumedWorker = false;
+            this.currentStep = 'ai';
+            this.processingPercent = 75;
 
-              this.processingMessage =
-                'Le document est en cours d’analyse…';
+            this.isProcessing = true;
 
-              this.scheduleStatusPoll();
+            this.processingMessage = 'Extraction des informations du patient en cours…';
 
-              break;
+            this.scheduleStatusPoll();
 
+            break;
 
-            case 'AI_PROCESSING':
-              this.waitingForResumedWorker = false;
-              this.currentStep = 'ai';
-              this.processingPercent = 75;
+          case 'READY_FOR_REVIEW':
+            this.waitingForResumedWorker = false;
+            this.stopPolling();
+            this.processingPercent = 100;
+            this.currentStep = 'review';
+            this.isProcessing = false;
+            this.processingMessage = '';
+            this.loadReview();
 
-              this.isProcessing =
-                true;
+            break;
 
-              this.processingMessage =
-                'Extraction des informations du patient en cours…';
+          case 'ARCHIVED':
+            this.stopPolling();
 
-              this.scheduleStatusPoll();
+            this.currentStep = 'archived';
 
-              break;
+            this.isProcessing = false;
 
+            this.processingMessage = '';
 
-            case 'READY_FOR_REVIEW':
-              this.waitingForResumedWorker = false;
-              this.stopPolling();
-              this.processingPercent = 100;
-              this.currentStep = 'review';
-              this.isProcessing = false;
-              this.processingMessage = '';
-              this.loadReview();
+            this.processingPercent = 100;
 
-              break;
+            break;
 
+          case 'OCR_ERROR':
+            if (this.waitForResumedWorker()) break;
 
-            case 'ARCHIVED':
+            this.stopPolling();
 
-              this.stopPolling();
+            this.isProcessing = false;
 
-              this.currentStep =
-                'archived';
+            this.processingMessage = '';
 
-              this.isProcessing =
-                false;
+            this.processingPercent = 0;
 
-              this.processingMessage =
-                '';
+            this.errorMessage = 'Échec du traitement du document.';
 
-              this.processingPercent = 100;
+            break;
 
-              break;
+          case 'AI_ERROR':
+            if (this.waitForResumedWorker()) break;
 
+            this.stopPolling();
 
-            case 'OCR_ERROR':
+            this.isProcessing = false;
 
-              if (this.waitForResumedWorker()) break;
+            this.processingMessage = '';
 
-              this.stopPolling();
+            this.processingPercent = 0;
 
-              this.isProcessing =
-                false;
+            this.errorMessage = 'Échec de l’extraction des informations.';
 
-              this.processingMessage =
-                '';
+            break;
 
-              this.processingPercent = 0;
+          case 'PROCESSING_ERROR':
+            if (this.waitForResumedWorker()) break;
 
-              this.errorMessage =
-                'Échec du traitement du document.';
+            this.stopPolling();
 
-              break;
+            this.isProcessing = false;
 
+            this.processingMessage = '';
 
-            case 'AI_ERROR':
+            this.processingPercent = 0;
 
-              if (this.waitForResumedWorker()) break;
+            this.errorMessage = 'Le traitement du document a échoué.';
 
-              this.stopPolling();
+            break;
 
-              this.isProcessing =
-                false;
+          case 'ARCHIVE_ERROR':
+            if (this.waitForResumedWorker()) break;
 
-              this.processingMessage =
-                '';
+            this.stopPolling();
 
-              this.processingPercent = 0;
+            this.isProcessing = false;
 
-              this.errorMessage =
-                'Échec de l’extraction des informations.';
+            this.processingMessage = '';
 
-              break;
+            this.processingPercent = 0;
 
+            this.errorMessage = 'Le traitement en arrière-plan n’a pas pu aboutir.';
 
-            case 'PROCESSING_ERROR':
+            break;
 
-              if (this.waitForResumedWorker()) break;
+          default:
+            this.isProcessing = false;
 
-              this.stopPolling();
+            this.processingMessage = '';
 
-              this.isProcessing =
-                false;
+            this.errorMessage = `Statut de document inconnu : ${documentStatus}`;
+        }
 
-              this.processingMessage =
-                '';
+        this.changeDetector.detectChanges();
+      },
 
-              this.processingPercent = 0;
+      error: (error) => {
+        this.isProcessing = false;
 
-              this.errorMessage =
-                'Le traitement du document a échoué.';
+        this.processingMessage = '';
 
-              break;
+        this.errorMessage = error.error?.detail ?? 'Impossible de vérifier le statut du document.';
 
-
-            case 'ARCHIVE_ERROR':
-
-              if (this.waitForResumedWorker()) break;
-
-              this.stopPolling();
-
-              this.isProcessing =
-                false;
-
-              this.processingMessage =
-                '';
-
-              this.processingPercent = 0;
-
-              this.errorMessage =
-                'Le traitement en arrière-plan n’a pas pu aboutir.';
-
-              break;
-
-
-            default:
-
-              this.isProcessing =
-                false;
-
-              this.processingMessage =
-                '';
-
-              this.errorMessage =
-                `Statut de document inconnu : ${documentStatus}`;
-          }
-
-          this.changeDetector.detectChanges();
-        },
-
-        error: (error) => {
-
-          this.isProcessing =
-            false;
-
-          this.processingMessage =
-            '';
-
-          this.errorMessage =
-            error.error?.detail ??
-            'Impossible de vérifier le statut du document.';
-
-          this.changeDetector.detectChanges();
-        },
-      });
+        this.changeDetector.detectChanges();
+      },
+    });
   }
-
 
   private scheduleStatusPoll(): void {
-
     if (this.pollTimer) {
-
-      clearTimeout(
-        this.pollTimer
-      );
+      clearTimeout(this.pollTimer);
     }
 
-    this.pollTimer =
-      setTimeout(
-        () => {
-
-          this.pollDocumentStatus();
-
-        },
-        1500,
-      );
+    this.pollTimer = setTimeout(() => {
+      this.pollDocumentStatus();
+    }, 1500);
   }
-
 
   private waitForResumedWorker(): boolean {
     if (!this.waitingForResumedWorker || this.resumedStatusAttempts >= 20) {
@@ -568,33 +418,27 @@ export class DocumentImportComponent
     return true;
   }
 
-
   // ========================================================
   // REVIEW
   // ========================================================
 
   private loadReview(): void {
-
     if (!this.documentId) {
       return;
     }
 
-    this.documentService
-      .getReview(
-        this.documentId
-      )
-      .subscribe({
+    this.documentService.getReview(this.documentId).subscribe({
+      next: (review) => {
+        // Accept both the current nested response and the older flat
+        // response shape so a backend/frontend restart cannot leave the
+        // import screen spinning after a successful 200 response.
+        const response = review as DocumentReview & {
+          ai_result?: AIResult;
+          matched_service_id?: string | null;
+        };
 
-        next: (review) => {
-          // Accept both the current nested response and the older flat
-          // response shape so a backend/frontend restart cannot leave the
-          // import screen spinning after a successful 200 response.
-          const response = review as DocumentReview & {
-            ai_result?: AIResult;
-            matched_service_id?: string | null;
-          };
-
-          const ai = response.ai ?? response.ai_result ?? {
+        const ai = response.ai ??
+          response.ai_result ?? {
             cni: null,
             first_name: null,
             last_name: null,
@@ -604,77 +448,58 @@ export class DocumentImportComponent
             discharge_date: null,
           };
 
-          const serviceId =
-            response.identification?.service?.id
-            ?? response.matched_service_id
-            ?? '';
+        const serviceId = response.identification?.service?.id ?? response.matched_service_id ?? '';
 
-          this.extractedInformation = {
+        this.extractedInformation = {
+          cni: ai.cni ?? '',
 
-            cni:
-              ai.cni ?? '',
+          firstName: ai.first_name ?? '',
 
-            firstName:
-              ai.first_name ?? '',
+          lastName: ai.last_name ?? '',
 
-            lastName:
-              ai.last_name ?? '',
+          hospitalizationNumber: ai.hospitalization_number ?? '',
 
-            hospitalizationNumber:
-              ai.hospitalization_number
-              ?? '',
+          serviceId,
 
-            serviceId,
+          serviceName: ai.service_name ?? '',
 
-            serviceName:
-              ai.service_name ?? '',
+          admissionDate: ai.admission_date ?? '',
 
-            admissionDate:
-              ai.admission_date ?? '',
+          dischargeDate: ai.discharge_date ?? '',
+        };
 
-            dischargeDate:
-              ai.discharge_date ?? '',
-          };
+        this.isProcessing = false;
 
-          this.isProcessing =
-            false;
+        this.processingPercent = 100;
 
-          this.processingPercent = 100;
+        this.currentStep = 'review';
 
-          this.currentStep =
-            'review';
+        this.message = 'Informations extraites. Vérifiez chaque champ.';
 
-          this.message =
-            'Informations extraites. Vérifiez chaque champ.';
+        this.reviewLoadAttempts = 0;
 
-          this.reviewLoadAttempts = 0;
+        this.changeDetector.detectChanges();
+      },
 
-          this.changeDetector.detectChanges();
-        },
+      error: (error) => {
+        // A READY status and the review endpoint can cross in flight when
+        // the worker and API use different DB connections. Retry briefly
+        // instead of leaving the user on a blank, apparently stuck screen.
+        if (this.reviewLoadAttempts < 5) {
+          this.reviewLoadAttempts += 1;
+          this.processingMessage = 'Document prêt. Chargement des informations extraites…';
+          this.reviewRetryTimer();
+          return;
+        }
 
-        error: (error) => {
-          // A READY status and the review endpoint can cross in flight when
-          // the worker and API use different DB connections. Retry briefly
-          // instead of leaving the user on a blank, apparently stuck screen.
-          if (this.reviewLoadAttempts < 5) {
-            this.reviewLoadAttempts += 1;
-            this.processingMessage =
-              'Document prêt. Chargement des informations extraites…';
-            this.reviewRetryTimer();
-            return;
-          }
+        this.isProcessing = false;
+        this.processingMessage = '';
+        this.errorMessage = error.error?.detail ?? 'Impossible de charger la révision du document.';
 
-          this.isProcessing = false;
-          this.processingMessage = '';
-          this.errorMessage =
-            error.error?.detail ??
-            'Impossible de charger la révision du document.';
-
-          this.changeDetector.detectChanges();
-        },
-      });
+        this.changeDetector.detectChanges();
+      },
+    });
   }
-
 
   private reviewRetryTimer(): void {
     if (this.pollTimer) {
@@ -686,338 +511,215 @@ export class DocumentImportComponent
     }, 1000);
   }
 
-
   // ========================================================
   // SERVICES
   // ========================================================
 
   private loadServices(): void {
+    this.documentService.getServices().subscribe({
+      next: (services) => {
+        this.services = services;
+      },
 
-    this.documentService
-      .getServices()
-      .subscribe({
-
-        next: (services) => {
-
-          this.services =
-            services;
-        },
-
-        error: () => {
-
-          this.errorMessage =
-            'Impossible de charger les services hospitaliers.';
-        },
-      });
+      error: () => {
+        this.errorMessage = 'Impossible de charger les services hospitaliers.';
+      },
+    });
   }
-
 
   // ========================================================
   // VERIFY SCREEN
   // ========================================================
 
   openVerification(): void {
+    this.errorMessage = '';
 
-    this.errorMessage =
-      '';
-
-    if (
-      !this.isInformationComplete()
-    ) {
-
-      this.errorMessage =
-        'Veuillez remplir tous les champs obligatoires.';
+    if (!this.isInformationComplete()) {
+      this.errorMessage = 'Veuillez remplir tous les champs obligatoires.';
 
       return;
     }
 
-    if (
-      !this.areDatesValid()
-    ) {
-
-      this.errorMessage =
-        'La date de sortie ne peut pas être antérieure à la date d’admission.';
+    if (!this.areDatesValid()) {
+      this.errorMessage = 'La date de sortie ne peut pas être antérieure à la date d’admission.';
 
       return;
     }
 
-    this.currentStep =
-      'verify';
+    this.currentStep = 'verify';
 
-    this.message =
-      'Vérifiez les informations avec le PDF original.';
+    this.message = 'Vérifiez les informations avec le PDF original.';
   }
-
 
   correctInformation(): void {
+    this.currentStep = 'review';
 
-    this.currentStep =
-      'review';
-
-    this.message =
-      'Vous pouvez corriger les informations extraites.';
+    this.message = 'Vous pouvez corriger les informations extraites.';
   }
-
 
   // ========================================================
   // VERIFY + ARCHIVE
   // ========================================================
 
   verifyAndArchive(): void {
-
     if (!this.documentId) {
       return;
     }
 
-    if (
-      !this.isInformationComplete()
-    ) {
-
-      this.errorMessage =
-      'Remplissez tous les champs obligatoires avant l’archivage.';
+    if (!this.isInformationComplete()) {
+      this.errorMessage = 'Remplissez tous les champs obligatoires avant l’archivage.';
 
       return;
     }
 
-    if (
-      !this.areDatesValid()
-    ) {
-
-      this.errorMessage =
-        'Discharge date cannot be before admission date.';
+    if (!this.areDatesValid()) {
+      this.errorMessage = 'Discharge date cannot be before admission date.';
 
       return;
     }
 
-    this.isProcessing =
-      true;
+    this.isProcessing = true;
 
-    this.errorMessage =
-      '';
+    this.errorMessage = '';
 
-    this.message =
-      '';
+    this.message = '';
 
-    this.processingMessage =
-        'Enregistrement des informations et archivage du document…';
-
+    this.processingMessage = 'Enregistrement des informations et archivage du document…';
 
     this.documentService
-      .verify(
-        this.documentId,
-        {
+      .verify(this.documentId, {
+        cni: this.extractedInformation.cni,
 
-          cni:
-            this.extractedInformation.cni,
+        first_name: this.extractedInformation.firstName,
 
-          first_name:
-            this.extractedInformation.firstName,
+        last_name: this.extractedInformation.lastName,
 
-          last_name:
-            this.extractedInformation.lastName,
+        hospitalization_number: this.extractedInformation.hospitalizationNumber,
 
-          hospitalization_number:
-            this.extractedInformation
-              .hospitalizationNumber,
+        service_id: this.extractedInformation.serviceId,
 
-          service_id:
-            this.extractedInformation
-              .serviceId,
+        admission_date: this.extractedInformation.admissionDate,
 
-          admission_date:
-            this.extractedInformation
-              .admissionDate,
-
-          discharge_date:
-            this.extractedInformation
-              .dischargeDate ||
-            null,
-        },
-      )
+        discharge_date: this.extractedInformation.dischargeDate || null,
+      })
       .subscribe({
-
         next: (response) => {
+          this.isProcessing = false;
 
-          this.isProcessing =
-            false;
+          this.processingMessage = '';
 
-          this.processingMessage =
-            '';
+          this.message = response.message;
 
-          this.message =
-            response.message;
-
-          this.currentStep =
-            'archived';
+          this.currentStep = 'archived';
 
           this.changeDetector.detectChanges();
 
-          this.router.navigate([
-            '/dashboard',
-          ]);
+          this.router.navigate(['/dashboard']);
         },
 
         error: (error) => {
+          this.isProcessing = false;
 
-          this.isProcessing =
-            false;
+          this.processingMessage = '';
 
-          this.processingMessage =
-            '';
-
-          this.errorMessage =
-            error.error?.detail ??
-            'Le document n’a pas pu être archivé.';
+          this.errorMessage = error.error?.detail ?? 'Le document n’a pas pu être archivé.';
 
           this.changeDetector.detectChanges();
         },
       });
   }
-
 
   // ========================================================
   // PDF
   // ========================================================
 
   private loadPdf(): void {
-
     if (!this.documentId) {
       return;
     }
 
-    this.documentService
-      .getFile(this.documentId)
-      .subscribe({
+    this.documentService.getFile(this.documentId).subscribe({
+      next: (blob) => {
+        this.revokePdfUrl();
 
-        next: (blob) => {
+        this.pdfUrl = URL.createObjectURL(blob);
 
-          this.revokePdfUrl();
+        this.pdfViewerUrl = this.sanitizer.bypassSecurityTrustResourceUrl(this.pdfUrl);
+      },
 
-          this.pdfUrl =
-            URL.createObjectURL(
-              blob
-            );
-
-          this.pdfViewerUrl =
-            this.sanitizer
-              .bypassSecurityTrustResourceUrl(
-                this.pdfUrl
-              );
-        },
-
-        error: () => {
-
-          this.errorMessage =
-            'Impossible de charger l’aperçu du PDF.';
-        },
-      });
+      error: () => {
+        this.errorMessage = 'Impossible de charger l’aperçu du PDF.';
+      },
+    });
   }
-
 
   private revokePdfUrl(): void {
-
     if (this.pdfUrl) {
+      URL.revokeObjectURL(this.pdfUrl);
 
-      URL.revokeObjectURL(
-        this.pdfUrl
-      );
+      this.pdfUrl = null;
 
-      this.pdfUrl =
-        null;
-
-      this.pdfViewerUrl =
-        null;
+      this.pdfViewerUrl = null;
     }
   }
-
 
   // ========================================================
   // VALIDATION
   // ========================================================
 
-  private isInformationComplete():
-    boolean {
-
-    const info =
-      this.extractedInformation;
+  private isInformationComplete(): boolean {
+    const info = this.extractedInformation;
 
     return Boolean(
-
-      info.cni.trim()
-
-      && info.firstName.trim()
-
-      && info.lastName.trim()
-
-      && info.hospitalizationNumber.trim()
-
-      && info.serviceId.trim()
-
-      && info.admissionDate.trim()
+      info.cni.trim() &&
+      info.firstName.trim() &&
+      info.lastName.trim() &&
+      info.hospitalizationNumber.trim() &&
+      info.serviceId.trim() &&
+      info.admissionDate.trim(),
     );
   }
 
+  private areDatesValid(): boolean {
+    const admission = this.extractedInformation.admissionDate;
 
-  private areDatesValid():
-    boolean {
+    const discharge = this.extractedInformation.dischargeDate;
 
-    const admission =
-      this.extractedInformation
-        .admissionDate;
-
-    const discharge =
-      this.extractedInformation
-        .dischargeDate;
-
-    if (
-      !admission ||
-      !discharge
-    ) {
-
+    if (!admission || !discharge) {
       return true;
     }
 
     return discharge >= admission;
   }
 
-
   // ========================================================
   // RESET
   // ========================================================
 
   resetWorkflow(): void {
-
     this.stopPolling();
 
     this.revokePdfUrl();
 
-    this.currentStep =
-      'import';
+    this.currentStep = 'import';
 
-    this.selectedFile =
-      null;
+    this.selectedFile = null;
 
-    this.documentId =
-      null;
+    this.documentId = null;
 
     this.reviewLoadAttempts = 0;
 
-    this.isProcessing =
-      false;
+    this.isProcessing = false;
 
-    this.message =
-      '';
+    this.message = '';
 
-    this.errorMessage =
-      '';
+    this.errorMessage = '';
 
-    this.processingMessage =
-      '';
+    this.processingMessage = '';
 
     this.processingPercent = 0;
 
     this.extractedInformation = {
-
       cni: '',
 
       firstName: '',
@@ -1036,28 +738,19 @@ export class DocumentImportComponent
     };
   }
 
-
   private stopPolling(): void {
-
     if (this.pollTimer) {
+      clearTimeout(this.pollTimer);
 
-      clearTimeout(
-        this.pollTimer
-      );
-
-      this.pollTimer =
-        null;
+      this.pollTimer = null;
     }
   }
 
-
   ngOnDestroy(): void {
-
     this.stopPolling();
 
     this.revokePdfUrl();
   }
-
 
   // ========================================================
   // PROGRESS
@@ -1070,9 +763,8 @@ export class DocumentImportComponent
 
   isStepCompleted(step: 'import' | 'review' | 'verify'): boolean {
     const visibleOrder = ['import', 'review', 'verify', 'archived'];
-    const currentVisibleStep = this.currentStep === 'ocr' || this.currentStep === 'ai'
-      ? 'import'
-      : this.currentStep;
+    const currentVisibleStep =
+      this.currentStep === 'ocr' || this.currentStep === 'ai' ? 'import' : this.currentStep;
     return visibleOrder.indexOf(step) < visibleOrder.indexOf(currentVisibleStep);
   }
 }

@@ -1,9 +1,26 @@
-<div class="page-container">
+<div class="page-container table-page">
   <div class="page-heading mt-10">
     <div>
-      <h1 class="page-title">Tous les documents</h1>
-      <p class="muted">Suivez les documents importés et leur état de traitement.</p>
+      <h1 class="page-title">{{ view() === 'active' ? 'Tous les documents' : 'Corbeille' }}</h1>
+      <p class="muted">{{ view() === 'active' ? 'Suivez les documents importés et leur état de traitement.' : 'Restaurez les documents supprimés.' }}</p>
     </div>
+    @if (user()?.role === 'ADMIN') {
+      <div class="heading-actions">
+        @if (view() === 'active') {
+          <button class="app-button app-button-secondary" type="button" (click)="showDeletedDocuments()">
+            <mat-icon>delete_outline</mat-icon>
+            Corbeille
+            @if (deletedDocumentCount() > 0) {
+              <span class="trash-count" aria-label="Documents dans la corbeille">{{ deletedDocumentCount() > 99 ? '99+' : deletedDocumentCount() }}</span>
+            }
+          </button>
+        } @else {
+          <button class="app-button app-button-secondary" type="button" (click)="showActiveDocuments()">
+            <mat-icon>arrow_back</mat-icon> Documents actifs
+          </button>
+        }
+      </div>
+    }
   </div>
 
   <section class="list-controls" aria-label="Recherche et filtres">
@@ -25,38 +42,97 @@
   </section>
 
   <section class="app-card document-list-card">
+    @if (successMessage()) { <p class="app-message app-message-success" role="status">{{ successMessage() }}</p> }
     @if (errorMessage()) { <p class="app-message app-message-error" role="alert">{{ errorMessage() }}</p> }
     @if (loading()) { <div class="list-state" role="status">Chargement des documents…</div> }
-    @if (!loading() && !filteredDocuments().length && !errorMessage()) {
-      <div class="empty-state"><mat-icon>folder_open</mat-icon><strong>Aucun document trouvé</strong><span>Modifiez la recherche ou le filtre de statut.</span></div>
+    @if (!loading() && view() === 'active') {
+      @if (!filteredDocuments().length && !errorMessage()) {
+        <div class="empty-state"><mat-icon>folder_open</mat-icon><strong>Aucun document trouvé</strong><span>Modifiez la recherche ou le filtre de statut.</span></div>
+      }
+      @if (filteredDocuments().length) {
+        <div class="app-table-wrap">
+          <table class="app-table action-table">
+            <thead><tr><th>Document</th><th>Statut</th><th>Date d’import</th><th>Actions</th></tr></thead>
+            <tbody>
+              @for (document of filteredDocuments(); track document.id) {
+                <tr>
+                  <td><div class="document-name"><mat-icon>picture_as_pdf</mat-icon><span>{{ document.original_filename }}</span></div></td>
+                  <td><span [class]="statusBadgeClass(document.status)">{{ statusLabel(document.status) }}</span></td>
+                  <td>{{ document.created_at | date:'d MMM y, HH:mm' }}</td>
+                  <td><div class="row-actions">
+                    @if (document.status === 'ARCHIVED' || document.status === 'READY_FOR_REVIEW' || user()?.role === 'ADMIN') {
+                      @if (document.status === 'ARCHIVED') {
+                        <a class="icon-table-action" [routerLink]="['/documents', document.id]"
+                          matTooltip="Voir les détails" matTooltipPosition="above"
+                          [attr.aria-label]="'Voir les détails de ' + document.original_filename">
+                          <mat-icon>visibility</mat-icon>
+                        </a>
+                      }
+                      @if (document.status === 'READY_FOR_REVIEW') {
+                        <button class="icon-table-action" type="button" (click)="continueReview(document)"
+                          matTooltip="Continuer la vérification" matTooltipPosition="above"
+                          [attr.aria-label]="'Continuer la vérification de ' + document.original_filename">
+                          <mat-icon>fact_check</mat-icon>
+                        </button>
+                      }
+                      @if (user()?.role === 'ADMIN' && canResume(document.status)) {
+                        <button class="icon-table-action" type="button" [disabled]="resumingDocumentId() === document.id"
+                          (click)="resumeProcessing(document)"
+                          [matTooltip]="resumingDocumentId() === document.id ? 'Relance en cours…' : 'Relancer le traitement'"
+                          matTooltipPosition="above"
+                          [attr.aria-label]="(resumingDocumentId() === document.id ? 'Relance en cours pour ' : 'Relancer le traitement de ') + document.original_filename">
+                          <mat-icon>restart_alt</mat-icon>
+                        </button>
+                      }
+                      @if (user()?.role === 'ADMIN') {
+                        <button class="icon-table-action delete-action" type="button" [disabled]="deletingDocumentId() === document.id"
+                          (click)="deleteDocument(document)"
+                          [matTooltip]="deletingDocumentId() === document.id ? 'Suppression en cours…' : 'Déplacer vers la corbeille'"
+                          matTooltipPosition="above"
+                          [attr.aria-label]="(deletingDocumentId() === document.id ? 'Suppression en cours pour ' : 'Déplacer vers la corbeille ') + document.original_filename">
+                          <mat-icon>delete_outline</mat-icon>
+                        </button>
+                      }
+                    } @else {
+                      <span class="no-actions">Aucune action</span>
+                    }
+                  </div></td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
     }
-    @if (!loading() && filteredDocuments().length) {
-      <div class="app-table-wrap">
-        <table class="app-table">
-          <thead><tr><th>Document</th><th>Statut</th><th>Date d’import</th><th>Actions</th></tr></thead>
-          <tbody>
-            @for (document of filteredDocuments(); track document.id) {
-              <tr>
-                <td><div class="document-name"><mat-icon>picture_as_pdf</mat-icon><span>{{ document.original_filename }}</span></div></td>
-                <td><span [class]="statusBadgeClass(document.status)">{{ statusLabel(document.status) }}</span></td>
-                <td>{{ document.created_at | date:'d MMM y, HH:mm' }}</td>
-                <td><div class="row-actions">
-                  @if (document.status === 'ARCHIVED') {
-                    <a class="table-action" [routerLink]="['/documents', document.id]"><mat-icon>info</mat-icon>Détails</a>
-                  }
-                  @if (document.status === 'READY_FOR_REVIEW') {
-                    <button class="table-action" type="button" (click)="continueReview(document)"><mat-icon>fact_check</mat-icon>Continuer la vérification</button>
-                  }
-                  @if (user()?.role === 'ADMIN' && canResume(document.status)) {
-                    <button class="table-action" type="button" [disabled]="resumingDocumentId() === document.id"
-                      (click)="resumeProcessing(document)"><mat-icon>restart_alt</mat-icon>{{ resumingDocumentId() === document.id ? 'Relance en cours…' : 'Relancer le traitement' }}</button>
-                  }
-                </div></td>
-              </tr>
-            }
-          </tbody>
-        </table>
-      </div>
+    @if (!loading() && view() === 'deleted') {
+      @if (!filteredDeletedDocuments().length && !errorMessage()) {
+        <div class="empty-state"><mat-icon>delete_sweep</mat-icon><strong>La corbeille est vide</strong><span>Aucun document supprimé ne correspond aux filtres.</span></div>
+      }
+      @if (filteredDeletedDocuments().length) {
+        <div class="app-table-wrap">
+          <table class="app-table action-table">
+            <thead><tr><th>Document</th><th>Ancien statut</th><th>Supprimé le</th><th>Actions</th></tr></thead>
+            <tbody>
+              @for (document of filteredDeletedDocuments(); track document.id) {
+                <tr>
+                  <td><div class="document-name deleted-document"><mat-icon>picture_as_pdf</mat-icon><span>{{ document.original_filename }}</span></div></td>
+                  <td><span [class]="statusBadgeClass(document.status)">{{ statusLabel(document.status) }}</span></td>
+                  <td>{{ document.deleted_at | date:'d MMM y, HH:mm' }}</td>
+                  <td><div class="row-actions">
+                    <button class="icon-table-action restore-action" type="button" [disabled]="restoringDocumentId() === document.id"
+                      (click)="restoreDocument(document)"
+                      [matTooltip]="restoringDocumentId() === document.id ? 'Restauration en cours…' : 'Restaurer le document'"
+                      matTooltipPosition="above"
+                      [attr.aria-label]="(restoringDocumentId() === document.id ? 'Restauration en cours pour ' : 'Restaurer ') + document.original_filename">
+                      <mat-icon>restore_from_trash</mat-icon>
+                    </button>
+                  </div></td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
     }
   </section>
 </div>

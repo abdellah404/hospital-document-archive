@@ -2,13 +2,14 @@ import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { Router } from '@angular/router';
 import { ArchivedDocument, DocumentService } from '../../../core/services/document';
 
 @Component({
   selector: 'app-document-search',
   standalone: true,
-  imports: [ FormsModule, MatIconModule,CommonModule],
+  imports: [FormsModule, MatIconModule, MatTooltipModule, CommonModule],
   templateUrl: './document-search.html',
   styleUrl: './document-search.css',
 })

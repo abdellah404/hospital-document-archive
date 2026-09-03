@@ -77,6 +77,16 @@ def process_document(
                 ),
             }
 
+        if document.deleted_at is not None:
+            return {
+        "status": (
+            "DOCUMENT_DELETED"
+        ),
+        "document_id": (
+            document_id
+        ),
+    }
+
         current_status = (
             document.status
             .strip()
@@ -403,11 +413,6 @@ def process_document(
         )
 
         if document is not None:
-
-            # Keep precise errors.
-            #
-            # Do not replace OCR_ERROR or AI_ERROR
-            # with a generic error.
 
             if document.status not in {
                 "OCR_ERROR",

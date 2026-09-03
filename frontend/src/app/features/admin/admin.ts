@@ -2,6 +2,7 @@ import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { ActivatedRoute } from '@angular/router';
 import { AuthService } from '../../core/services/auth';
 import { AdminService, AuditLog, ServiceItem } from '../../core/services/admin';
@@ -10,7 +11,7 @@ import { User } from '../../core/models/user';
 @Component({
   selector: 'app-admin',
   standalone: true,
-  imports: [DatePipe, FormsModule, ReactiveFormsModule, MatIconModule],
+  imports: [DatePipe, FormsModule, ReactiveFormsModule, MatIconModule, MatTooltipModule],
   templateUrl: './admin.html',
   styleUrl: './admin.css',
 })
@@ -167,6 +168,8 @@ export class AdminComponent implements OnInit {
           DOCUMENT_ARCHIVED: 'Document archivé',
           DOCUMENT_ARCHIVE_UPDATED: 'Document modifié',
           DOCUMENT_PROCESSING_RESUMED: 'Traitement relancé',
+          DOCUMENT_DELETED: 'Document supprimé',
+          DOCUMENT_RESTORED: 'Document restauré',
           USER_CREATED: 'Utilisateur créé',
           USER_STATUS_CHANGED: 'Statut utilisateur modifié',
           SERVICE_CREATED: 'Service créé',
@@ -177,7 +180,8 @@ export class AdminComponent implements OnInit {
   }
 
   actionBadgeClass(action: string): string {
-    if (action === 'DOCUMENT_ARCHIVED' || action.endsWith('_CREATED')) return 'app-badge app-badge-success';
+    if (action === 'DOCUMENT_ARCHIVED' || action === 'DOCUMENT_RESTORED' || action.endsWith('_CREATED')) return 'app-badge app-badge-success';
+    if (action === 'DOCUMENT_DELETED') return 'app-badge app-badge-error';
     if (action === 'DOCUMENT_PROCESSING_RESUMED') return 'app-badge app-badge-processing';
     if (action.endsWith('_STATUS_CHANGED')) return 'app-badge app-badge-warning';
     if (action.endsWith('_UPDATED')) return 'app-badge app-badge-info';

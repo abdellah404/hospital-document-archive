@@ -52,4 +52,15 @@ class Document(Base):
     archived_at: Mapped[datetime | None] = mapped_column(
     DateTime,
     nullable=True,
-)
+
+    )
+
+    deleted_at: Mapped[datetime | None] = mapped_column(
+        DateTime,
+        nullable=True,
+    )
+
+    deleted_by: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("users.id"),
+        nullable=True,
+    )

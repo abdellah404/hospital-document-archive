@@ -21,8 +21,10 @@
 .log-date strong, .log-date small, .log-context strong, .log-context small { display: block; }
 .log-date strong { color: #334155; font-size: 12px; font-weight: 700; }
 .log-date small, .log-context small { margin-top: 1px; color: #718096; font-size: 11px; }
-.log-user { display: flex; align-items: center; gap: 6px; color: #334155 !important; font-weight: 600; }
+.log-user { display: table-cell; color: #334155 !important; font-weight: 600; }
 .log-user mat-icon { width: 17px; height: 17px; color: #718096; font-size: 17px; }
+.log-user mat-icon, .log-user span { vertical-align: middle; }
+.log-user mat-icon { margin-right: 6px; }
 .log-context strong { color: #334155; font-size: 12px; }
 .log-detail { line-height: 1.4; overflow-wrap: anywhere; }
 .log-state { height: 180px; }

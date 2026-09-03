@@ -34,6 +34,8 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   margin-inline: auto;
 }
 
+.table-page { max-width: 1320px; }
+
 .page-title {
   margin: 0;
   color: var(--text-strong);
@@ -175,6 +177,29 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 
 .table-action mat-icon { font-size: 1rem; }
 
+.icon-table-action {
+  display: inline-grid;
+  width: 40px;
+  height: 40px;
+  place-items: center;
+  border: 1px solid #d6e1ec;
+  border-radius: .5rem;
+  background: white;
+  padding: 0;
+  color: #315f91;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color .18s ease, border-color .18s ease, color .18s ease, box-shadow .18s ease;
+}
+.icon-table-action:hover { border-color: #9fb4ca; background: #f1f6fb; color: #174f89; }
+.icon-table-action:disabled { cursor: wait; opacity: .5; }
+.icon-table-action mat-icon { width: 20px; height: 20px; font-size: 20px; line-height: 20px; }
+.icon-action-primary { border-color: var(--brand-navy); background: var(--brand-navy); color: white; }
+.icon-action-primary:hover { border-color: var(--brand-navy-light); background: var(--brand-navy-light); color: white; }
+.action-table th:last-child,
+.action-table td:last-child { width: 1%; text-align: center; white-space: nowrap; }
+.action-table .row-actions { justify-content: center; }
+
 .app-message { margin-block: 1rem; border: 1px solid transparent; border-radius: 0.5rem; padding: 0.75rem 0.875rem; font-size: 0.8125rem; }
 .app-message-success { border-color: #bfe6d3; background: #eaf7f0; color: #126443; }
 .app-message-error { border-color: #f5c4c8; background: #fff1f2; color: #9f2933; }
@@ -209,6 +234,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   .app-card { padding: 1rem; }
   .page-title { letter-spacing: -.025em; }
   .app-table-wrap::after { display: block; padding-top: .5rem; color: var(--text-muted); content: "Faites défiler horizontalement pour voir toutes les colonnes"; font-size: .6875rem; }
+  .icon-table-action { width: 44px; height: 44px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
