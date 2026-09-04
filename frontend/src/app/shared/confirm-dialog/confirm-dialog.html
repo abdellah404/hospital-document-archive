@@ -1,0 +1,27 @@
+<section class="confirmation" [class.confirmation-success]="data.tone === 'success'">
+  <div class="confirmation-icon" aria-hidden="true">
+    <mat-icon>{{ data.icon }}</mat-icon>
+  </div>
+
+  <div class="confirmation-copy">
+    <h2 mat-dialog-title>{{ data.title }}</h2>
+    <mat-dialog-content>
+      <p>{{ data.message }}</p>
+      @if (data.note) {
+        <p class="confirmation-note">{{ data.note }}</p>
+      }
+    </mat-dialog-content>
+  </div>
+</section>
+
+<mat-dialog-actions align="end">
+  <button class="app-button app-button-secondary" type="button" [mat-dialog-close]="false">
+    Annuler
+  </button>
+  <button class="app-button confirmation-submit" type="button"
+    [class.confirmation-submit-success]="data.tone === 'success'"
+    [mat-dialog-close]="true">
+    <mat-icon>{{ data.icon }}</mat-icon>
+    {{ data.confirmLabel }}
+  </button>
+</mat-dialog-actions>

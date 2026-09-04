@@ -1,11 +1,13 @@
 import { DatePipe } from '@angular/common';
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { MatDialog } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { Router, RouterLink } from '@angular/router';
 
 import { AuthService } from '../../../core/services/auth';
+import { ConfirmDialogComponent } from '../../../shared/confirm-dialog/confirm-dialog';
 import {
   DeletedDocument,
   DocumentResponse,
@@ -24,6 +26,7 @@ type StatusFilter = 'all' | 'imported' | 'processing' | 'review' | 'archived' | 
 export class DocumentListComponent implements OnInit {
   private readonly authService = inject(AuthService);
   private readonly documentService = inject(DocumentService);
+  private readonly dialog = inject(MatDialog);
   private readonly router = inject(Router);
 
   readonly user = this.authService.currentUser;
@@ -161,12 +164,28 @@ export class DocumentListComponent implements OnInit {
   }
 
   deleteDocument(document: DocumentResponse): void {
-    if (this.user()?.role !== 'ADMIN' || this.deletingDocumentId()) return;
+    if (this.user()?.role !== 'ADMIN' || this.deletingDocumentId() || this.dialog.openDialogs.length) return;
 
-    const confirmed = window.confirm(
-      `Supprimer le document « ${document.original_filename} » ? Le PDF sera conservé et le document pourra être restauré depuis la corbeille.`,
-    );
-    if (!confirmed) return;
+    this.dialog.open(ConfirmDialogComponent, {
+      width: '460px',
+      maxWidth: 'calc(100vw - 32px)',
+      autoFocus: 'first-tabbable',
+      restoreFocus: true,
+      data: {
+        title: 'Déplacer vers la corbeille ?',
+        message: `Le document « ${document.original_filename} » sera retiré de la liste des documents actifs.`,
+        note: 'Le fichier PDF sera conservé et pourra être restauré ultérieurement.',
+        confirmLabel: 'Déplacer',
+        icon: 'delete_outline',
+        tone: 'danger',
+      },
+    }).afterClosed().subscribe(confirmed => {
+      if (confirmed) this.moveDocumentToTrash(document);
+    });
+  }
+
+  private moveDocumentToTrash(document: DocumentResponse): void {
+    if (this.deletingDocumentId()) return;
 
     this.deletingDocumentId.set(document.id);
     this.errorMessage.set('');
@@ -190,12 +209,28 @@ export class DocumentListComponent implements OnInit {
   }
 
   restoreDocument(document: DeletedDocument): void {
-    if (this.user()?.role !== 'ADMIN' || this.restoringDocumentId()) return;
+    if (this.user()?.role !== 'ADMIN' || this.restoringDocumentId() || this.dialog.openDialogs.length) return;
 
-    const confirmed = window.confirm(
-      `Restaurer le document « ${document.original_filename} » ?`,
-    );
-    if (!confirmed) return;
+    this.dialog.open(ConfirmDialogComponent, {
+      width: '460px',
+      maxWidth: 'calc(100vw - 32px)',
+      autoFocus: 'first-tabbable',
+      restoreFocus: true,
+      data: {
+        title: 'Restaurer ce document ?',
+        message: `Le document « ${document.original_filename} » sera restauré.`,
+        note: 'Il réapparaîtra dans la liste des documents actifs.',
+        confirmLabel: 'Restaurer',
+        icon: 'restore_from_trash',
+        tone: 'success',
+      },
+    }).afterClosed().subscribe(confirmed => {
+      if (confirmed) this.restoreDeletedDocument(document);
+    });
+  }
+
+  private restoreDeletedDocument(document: DeletedDocument): void {
+    if (this.restoringDocumentId()) return;
 
     this.restoringDocumentId.set(document.id);
     this.errorMessage.set('');

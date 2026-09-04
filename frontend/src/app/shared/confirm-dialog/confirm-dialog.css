@@ -1,0 +1,23 @@
+:host { display: block; padding: 1.5rem; }
+.confirmation { display: grid; grid-template-columns: 48px minmax(0, 1fr); gap: 1rem; }
+.confirmation-icon { display: grid; width: 48px; height: 48px; place-items: center; border-radius: 50%; background: #fdecee; color: var(--danger); }
+.confirmation-icon mat-icon { width: 24px; height: 24px; font-size: 24px; }
+.confirmation-success .confirmation-icon { background: #e8f6ef; color: var(--brand-green); }
+.confirmation-copy { min-width: 0; }
+h2[mat-dialog-title] { margin: 0; padding: 0; color: var(--text-strong); font-size: 1.25rem; font-weight: 700; letter-spacing: -.02em; line-height: 1.35; }
+mat-dialog-content { max-height: none; margin-top: .5rem; padding: 0; color: var(--text-muted); font-size: .875rem; line-height: 1.55; }
+mat-dialog-content p { margin: 0; }
+.confirmation-note { margin-top: .625rem !important; color: #334155; font-size: .8125rem; }
+mat-dialog-actions { gap: .625rem; min-height: 0; margin-top: 1.5rem; padding: 0; }
+.confirmation-submit { border: 1px solid var(--danger); background: var(--danger); color: white; }
+.confirmation-submit:hover { border-color: #8f1f2a; background: #8f1f2a; }
+.confirmation-submit-success { border-color: var(--brand-green); background: var(--brand-green); }
+.confirmation-submit-success:hover { border-color: #126443; background: #126443; }
+
+@media (max-width: 520px) {
+  :host { padding: 1.25rem; }
+  .confirmation { grid-template-columns: 40px minmax(0, 1fr); gap: .75rem; }
+  .confirmation-icon { width: 40px; height: 40px; }
+  mat-dialog-actions { display: grid; grid-template-columns: 1fr; }
+  mat-dialog-actions .app-button { width: 100%; }
+}
